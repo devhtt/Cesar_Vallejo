@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Seleccionar actividad - UCV</title>
+  <link rel="icon" type="image/png" href="ucv.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Estilos específicos de la página de selección */
+    .selection {
+      padding: 48px 0;
+      text-align: center;
+    }
+    .selection-grid {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    .sel-btn {
+      min-width: 200px;
+      padding: 18px 26px;
+      border-radius: 28px;
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(12,20,40,0.08);
+      border: 2px solid rgba(0,0,0,0.06); /* contorno similar al principal */
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .sel-btn:hover { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(12,20,40,0.12); cursor:pointer; }
+    .sel-galeria { background: #e03b3b; }   /* rojo decorativo */
+    .sel-practica { background: #34a853; }  /* verde */
+    .sel-comunicacion { background: #4285f4; } /* azul */
+    @media (max-width:700px){
+      .sel-btn { min-width: 140px; padding: 14px 18px; font-size: .95rem; }
+      .selection-grid { gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-nav">
+    <div class="container">
+      <div class="logo-container">
+        <img src="ucv.png" alt="Logo UCV" class="logo">
+        <span class="university-name">Universidad César Vallejo</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="selection container">
+    <h1>Selecciona una actividad</h1>
+    <p style="color:#555; margin-top:6px;">Elige una sección para continuar</p>
+
+    <div class="selection-grid" role="navigation" aria-label="Opciones">
+      <a class="sel-btn sel-galeria" href="images.html">Galería</a>
+      <a class="sel-btn sel-practica" href="#" onclick="alert('Página de práctica pendiente'); return false;">Práctica</a>
+      <a class="sel-btn sel-comunicacion" href="#" onclick="alert('Página de comunicación pendiente'); return false;">Comunicación</a>
+    </div>
+
+    <div style="margin-top:28px;">
+      <a href="index.html" class="btn-conocer" style="text-decoration:none;">Inicio</a>
+    </div>
+  </main>
+</body>
+</html>
