@@ -77,10 +77,10 @@ const documentSchema = new mongoose.Schema({
   authorEmail: String,
   authorPic: String,
   files: [{
-    name: String,
-    type: String,
-    url: String,
-    path: String
+    name: { type: String },
+    mime: { type: String },
+    url: { type: String },
+    path: { type: String }
   }]
 }, { timestamps: true });
 
@@ -269,22 +269,25 @@ app.post('/api/documents', upload.none(), async (req, res) => {
 app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => {
   try {
     const postId = req.body.postId;
-    if (!postId || !req.files || req.files.length === 0) return res.status(400).json({ ok: false, error: 'Faltan archivos o postId' });
+    if (!postId || !req.files || req.files.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Faltan archivos o postId' });
+    }
 
     const doc = await Document.findById(postId);
     if (!doc) return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
 
-    const baseUrl = process.env.BASE_URL ? process.env.BASE_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+    const baseUrl = (process.env.BASE_URL) ? process.env.BASE_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+
+    // Mapear archivos al formato esperado por el esquema
     const files = req.files.map(f => ({
       name: f.originalname,
-      type: f.mimetype,
+      mime: f.mimetype,
       url: `${baseUrl}/uploads/${f.filename}`,
       path: f.path
     }));
 
-    // Asegurarse de que files sea un array
-    if (!Array.isArray(doc.files)) doc.files = [];
-    doc.files.push(...files);
+    // Añadir al array de subdocumentos
+    doc.files = (doc.files || []).concat(files);
     await doc.save();
 
     res.json({ ok: true, files });
