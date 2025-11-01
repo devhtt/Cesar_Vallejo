@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('content', content);
             formData.append('author', user.name || 'Usuario');
-            formData.append('email', user.email);
+            formData.append('authorEmail', user.email);
             formData.append('picture', user.picture || '');
 
             // Agregar archivos si hay
@@ -331,3 +331,4 @@ if (fileInput && previewContainer) {
         });
     });
 }
+
