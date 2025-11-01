@@ -7,6 +7,10 @@ import mongoose from 'mongoose';
 import path from 'path';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com';
@@ -55,7 +59,7 @@ async function upsertUser(userObj) {
   return await User.findOneAndUpdate({ email: userObj.email }, userObj, { upsert: true, new: true, setDefaultsOnInsert: true }).exec();
 }
 
-// Configuración de Multer (subida de archivos) – **mover arriba para usar en routes**
+// Configuración de Multer (subida de archivos)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`)
@@ -157,7 +161,6 @@ app.post('/api/documents', async (req, res) => {
   }
 });
 
-// POST upload **ahora funciona porque upload ya está declarado**
 app.post('/api/documents/upload', upload.array('files',5), async (req,res)=>{
   try{
     const { postId } = req.body;
@@ -201,4 +204,3 @@ app.use((err, req, res, next)=>{
 app.use(express.static(path.join(__dirname,'..')));
 
 app.listen(PORT,()=>console.log(`Server running on port ${PORT}`));
-
