@@ -10,6 +10,9 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const PORT = process.env.PORT || 5000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com';
 const MONGODB_URI = process.env.MONGODB_URI || ''; // Set in Render
@@ -121,7 +124,6 @@ app.post('/api/session_login', async (req, res) => {
 
 // POST /api/logout
 app.post('/api/logout', (req, res) => {
-  // Si usas cookies/JWT limpiar aquí
   res.json({ ok: true });
 });
 
@@ -146,7 +148,6 @@ app.post('/api/reviews', async (req, res) => {
     const { text, rating, user } = req.body;
     if (!text || !rating || !user || !user.email) return res.status(400).json({ ok: false, error: 'invalid' });
 
-    // Evitar múltiples reseñas por mismo email
     const exists = await Review.findOne({ 'user.email': user.email }).exec();
     if (exists) return res.status(409).json({ ok: false, error: 'user_has_review' });
 
@@ -161,7 +162,6 @@ app.post('/api/reviews', async (req, res) => {
     });
 
     await review.save();
-    // Asegurar usuario en collection Users
     await upsertUser({ email: user.email, name: user.name, picture: user.picture, registeredWith: 'google', createdAt: Date.now() });
     res.json({ ok: true, review });
   } catch (err) {
@@ -220,7 +220,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB por archivo
+  limits: { fileSize: 20 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
     const allowed = [
       'image/jpeg','image/png','image/gif',
@@ -238,16 +238,14 @@ const upload = multer({
 // Servir archivos estáticos
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Middleware de manejo de errores (si hay un error, devolver JSON en vez de HTML)
+// Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err && err.stack ? err.stack : err);
   const status = err && err.status ? err.status : 500;
-  // intentar enviar JSON con mensaje y stack en dev
   const payload = { ok: false, error: err && err.message ? err.message : 'server_error' };
   if (process.env.NODE_ENV !== 'production' && err && err.stack) {
     payload.stack = err.stack;
   }
-  // si ya se comenzó a enviar respuesta, terminar
   if (res.headersSent) {
     return next(err);
   }
@@ -255,21 +253,16 @@ app.use((err, req, res, next) => {
 });
 
 // POST /api/documents - acepta JSON o form-data (sin archivos)
-// Nota: si frontend envía FormData por error, multer.none() permite leer campos de texto.
 app.post('/api/documents', upload.none(), async (req, res) => {
   try {
-    // soportar tanto JSON (req.body) como form-data (req.body)
-    // permitir content vacío (se podrán subir archivos después)
     const content = (req.body.content || '').toString();
     const author = req.body.author || req.body.authorName || 'Usuario';
     const authorEmail = req.body.authorEmail || req.body.email;
 
-    // authorEmail es obligatorio
     if (!authorEmail) {
       return res.status(400).json({ ok: false, error: 'Faltan datos requeridos: authorEmail' });
     }
 
-    // Asegurar usuario: si no existe, crear/upsert mínimo
     let user = await User.findOne({ email: authorEmail }).lean().exec();
     if (!user) {
       await upsertUser({
@@ -350,9 +343,15 @@ app.get('/api/documents/search', async (req, res) => {
   }
 });
 
-// Opcional: servir frontend estático si lo subes aquí
+// Servir frontend estático
 app.use(express.static(path.join(__dirname, '..')));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
