@@ -314,6 +314,63 @@ app.get('/api/documents/search', async (req, res) => {
   }
 });
 
+// DELETE /api/documents/:id - borrar documento (validar autor)
+app.delete('/api/documents/:id', async (req, res) => {
+  try {
+    const docId = req.params.id;
+    const authorEmail = req.query.authorEmail;
+    
+    if (!docId || !authorEmail) {
+      return res.status(400).json({ ok: false, error: 'Faltan datos requeridos' });
+    }
+
+    const doc = await Document.findById(docId);
+    if (!doc) {
+      return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
+    }
+
+    // Validar que el solicitante sea el autor
+    if (doc.authorEmail !== authorEmail) {
+      return res.status(403).json({ ok: false, error: 'No autorizado' });
+    }
+
+    await Document.findByIdAndDelete(docId);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Error borrando documento:', err);
+    res.status(500).json({ ok: false, error: err.message || 'Error al borrar documento' });
+  }
+});
+
+// PUT /api/documents/:id - editar documento (validar autor)
+app.put('/api/documents/:id', async (req, res) => {
+  try {
+    const docId = req.params.id;
+    const { content, authorEmail } = req.body;
+    
+    if (!docId || !authorEmail) {
+      return res.status(400).json({ ok: false, error: 'Faltan datos requeridos' });
+    }
+
+    const doc = await Document.findById(docId);
+    if (!doc) {
+      return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
+    }
+
+    // Validar que el solicitante sea el autor
+    if (doc.authorEmail !== authorEmail) {
+      return res.status(403).json({ ok: false, error: 'No autorizado' });
+    }
+
+    doc.content = content;
+    await doc.save();
+    res.json({ ok: true, document: doc });
+  } catch (err) {
+    console.error('Error actualizando documento:', err);
+    res.status(500).json({ ok: false, error: err.message || 'Error al actualizar documento' });
+  }
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 
 app.listen(PORT, () => {
