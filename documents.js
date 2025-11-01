@@ -1,8 +1,27 @@
+// Definir BASE_URL y funciones helper
+const BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000' 
+    : 'https://ucv-backend-2ohp.onrender.com';
+
 const API_URL = 'https://ucv-backend-2ohp.onrender.com/api';
 
-// Verificar BASE_URL al inicio como en reseñas.js
-if (typeof BASE_URL === 'undefined') {
-    const BASE_URL = 'https://ucv-backend-2ohp.onrender.com';
+// Helper functions
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[m]));
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -58,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Función para cargar documentos (similar a loadReviews)
+    // Función para cargar documentos corregida (antes loadPosts)
     async function loadDocuments(searchQuery = '') {
         try {
             const url = searchQuery 
@@ -117,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
             const content = document.getElementById('postContent').value.trim();
             const files = document.getElementById('fileInput').files;
 
@@ -125,14 +145,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            const submitBtn = document.querySelector('.btn-submit');
+            if (submitBtn) submitBtn.disabled = true;
+
             try {
-                await postDocument(content, files);
+                const formData = new FormData();
+                formData.append('content', content);
+                
+                // Agregar archivos si hay
+                if (files && files.length) {
+                    Array.from(files).forEach(file => {
+                        formData.append('files', file);
+                    });
+                }
+
+                const response = await fetch(`${BASE_URL}/api/documents`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al publicar');
+                }
+
+                // Limpiar formulario
                 form.reset();
                 document.getElementById('filePreviewContainer').innerHTML = '';
+                document.getElementById('filePreviewContainer').style.display = 'none';
+                
+                // Recargar documentos
                 displayDocuments();
+                
                 alert('¡Publicado correctamente!');
+
             } catch (err) {
-                console.error(err);
+                console.error('Error:', err);
+                alert('Error al publicar. Por favor intenta nuevamente.');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
     }
@@ -158,7 +209,8 @@ document.addEventListener('DOMContentLoaded', function() {
 const searchInput = document.getElementById('searchInput');
 if (searchInput) {
     searchInput.addEventListener('input', debounce(() => {
-        loadPosts(searchInput.value.trim());
+        currentPage = 1;
+        displayDocuments();
     }, 300));
 }
 
@@ -247,36 +299,35 @@ function createFilePreview(file) {
 const fileInput = document.getElementById('fileInput');
 const previewContainer = document.getElementById('filePreviewContainer');
 
-if (fileInput) {
+if (fileInput && previewContainer) {
     fileInput.addEventListener('change', function() {
         const files = Array.from(this.files);
-        
-        if (previewContainer) {
-            previewContainer.innerHTML = files.map(file => createFilePreview(file)).join('');
-            
-            // Manejar eliminación de archivos
-            previewContainer.querySelectorAll('.preview-remove').forEach(btn => {
-                btn.onclick = function() {
-                    const fileName = this.dataset.name;
-                    const dt = new DataTransfer();
-                    
-                    Array.from(fileInput.files)
-                        .filter(f => f.name !== fileName)
-                        .forEach(f => dt.items.add(f));
-                    
-                    fileInput.files = dt.files;
-                    
-                    // Actualizar preview
-                    if (fileInput.files.length === 0) {
-                        previewContainer.innerHTML = '';
-                        previewContainer.classList.add('hidden');
-                    } else {
-                        this.closest('.preview-item').remove();
-                    }
-                };
-            });
-            
-            previewContainer.classList.toggle('hidden', files.length === 0);
+        if (!files.length) {
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'none';
+            return;
         }
+
+        previewContainer.innerHTML = files.map(file => createFilePreview(file)).join('');
+        previewContainer.style.display = 'block';
+
+        // Agregar listeners para remover archivos
+        previewContainer.querySelectorAll('.preview-remove').forEach(btn => {
+            btn.onclick = function() {
+                const fileName = this.dataset.name;
+                const dt = new DataTransfer();
+                Array.from(fileInput.files)
+                    .filter(f => f.name !== fileName)
+                    .forEach(f => dt.items.add(f));
+                fileInput.files = dt.files;
+                
+                if (fileInput.files.length === 0) {
+                    previewContainer.innerHTML = '';
+                    previewContainer.style.display = 'none';
+                } else {
+                    this.closest('.preview-item').remove();
+                }
+            };
+        });
     });
 }
