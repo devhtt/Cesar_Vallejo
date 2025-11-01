@@ -151,12 +151,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render posts
   async function displayDocuments(q = '') {
     const { documents } = await loadDocuments(q);
+    const currentUser = await getCurrentUser();
+    
     if (!postsList) return;
     if (!documents || documents.length === 0) {
       postsList.innerHTML = '<p>No hay publicaciones aún</p>';
       return;
     }
+
     postsList.innerHTML = documents.map(doc => {
+      // Agregar botones editar/borrar solo si es el autor
+      const isAuthor = currentUser && currentUser.email === doc.authorEmail;
+      const actionButtons = isAuthor ? `
+        <div class="post-actions">
+          <button class="btn-edit" onclick="editDocument('${doc._id}')">✏️ Editar</button>
+          <button class="btn-delete" onclick="deleteDocument('${doc._id}')">🗑️ Borrar</button>
+        </div>
+      ` : '';
+
       // Normalizar lista de archivos (compatible con datos antiguos)
       const rawFiles = Array.isArray(doc.files) ? doc.files : (doc.files ? [doc.files] : []);
       const filesArr = rawFiles.map(normalizeFileEntry).filter(f => f && f.url);
@@ -204,13 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
       ` : '';
 
       return `
-        <div class="post">
+        <div class="post" data-id="${doc._id}">
           <div class="post-header">
-            <img src="${escapeHtml(doc.authorPic || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.author||'U')}`)}" class="post-author-pic" alt="">
+            <img src="${escapeHtml(doc.authorPic || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.author||'U')}`)}" 
+                 class="post-author-pic" alt="">
             <div class="post-info">
               <div class="post-author">${escapeHtml(doc.author)}</div>
               <div class="post-date">${new Date(doc.date).toLocaleString()}</div>
             </div>
+            ${actionButtons}
           </div>
           <div class="post-content">${escapeHtml(doc.content)}</div>
           ${attachmentsHtml}
@@ -374,3 +388,67 @@ document.addEventListener('DOMContentLoaded', () => {
   // initial load
   displayDocuments();
 });
+
+// Función para borrar documento
+async function deleteDocument(id) {
+  if (!confirm('¿Estás seguro de borrar esta publicación?')) return;
+  
+  const user = await getCurrentUser();
+  if (!user || !user.email) {
+    alert('Necesitas iniciar sesión');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/documents/${id}?authorEmail=${encodeURIComponent(user.email)}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    
+    if (!res.ok) throw new Error('No autorizado');
+    
+    await displayDocuments(); // recargar lista
+    alert('Publicación borrada');
+  } catch (err) {
+    alert('Error al borrar: ' + err.message);
+  }
+}
+
+// Función para editar documento
+async function editDocument(id) {
+  const user = await getCurrentUser();
+  if (!user || !user.email) {
+    alert('Necesitas iniciar sesión');
+    return;
+  }
+
+  const postEl = document.querySelector(`.post[data-id="${id}"]`);
+  const contentEl = postEl.querySelector('.post-content');
+  const currentContent = contentEl.textContent;
+
+  const newContent = prompt('Editar publicación:', currentContent);
+  if (!newContent || newContent === currentContent) return;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/documents/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        content: newContent,
+        authorEmail: user.email
+      })
+    });
+    
+    if (!res.ok) throw new Error('No autorizado');
+    
+    await displayDocuments(); // recargar lista
+    alert('Publicación actualizada');
+  } catch (err) {
+    alert('Error al actualizar: ' + err.message);
+  }
+}
+
+// Exponer funciones globalmente
+window.deleteDocument = deleteDocument;
+window.editDocument = editDocument;
