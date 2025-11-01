@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reseñas y Comentarios - UCV</title>
+    <link rel="icon" type="image/png" href="ucv.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="resenas.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="top-nav">
+        <div class="container">
+            <div class="logo-container">
+                <img src="ucv.png" alt="Logo UCV" class="logo">
+                <span class="university-name">Universidad César Vallejo</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="reviews-container">
+        <section class="reviews-header">
+            <h1>Reseñas y Comentarios</h1>
+            <div class="overall-rating">
+                <div class="rating-numbers">
+                    <span class="big-rating">0.0</span>
+                    <div class="rating-stars">
+                        <!-- Las estrellas se actualizarán dinámicamente -->
+                    </div>
+                    <span class="total-reviews">No hay reseñas aún</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="new-review">
+            <h2>Escribe una reseña</h2>
+            <div class="review-form">
+                <div class="star-rating">
+                    <i class="far fa-star" data-rating="1"></i>
+                    <i class="far fa-star" data-rating="2"></i>
+                    <i class="far fa-star" data-rating="3"></i>
+                    <i class="far fa-star" data-rating="4"></i>
+                    <i class="far fa-star" data-rating="5"></i>
+                </div>
+                <textarea id="reviewText" placeholder="Comparte tu experiencia..."></textarea>
+                <button id="submitReview" class="btn-submit">Publicar reseña</button>
+            </div>
+        </section>
+
+        <section class="reviews-list">
+            <!-- Las reseñas se cargarán dinámicamente aquí -->
+        </section>
+
+        <div class="pagination">
+            <button class="btn-page" id="prevPage">Anterior</button>
+            <span id="currentPage">1</span>
+            <button class="btn-page" id="nextPage">Siguiente</button>
+        </div>
+
+        <div class="back-to-dash">
+            <a href="seleccion.html" class="btn-back">Volver al Dashboard</a>
+        </div>
+    </main>
+
+    <script src="main.js"></script>
+    <script src="resenas.js"></script>
+</body>
+</html>
