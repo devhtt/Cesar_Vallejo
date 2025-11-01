@@ -7,11 +7,10 @@ import mongoose from 'mongoose';
 import path from 'path';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import { fileURLToPath } from 'url'; // agregado
 
 const PORT = process.env.PORT || 5000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com';
-const MONGODB_URI = process.env.MONGODB_URI || ''; // Set en Render
+const MONGODB_URI = process.env.MONGODB_URI || ''; // Set in Render
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -120,6 +119,7 @@ app.post('/api/session_login', async (req, res) => {
 
 // POST /api/logout
 app.post('/api/logout', (req, res) => {
+  // Si usas cookies/JWT limpiar aquí
   res.json({ ok: true });
 });
 
@@ -144,6 +144,7 @@ app.post('/api/reviews', async (req, res) => {
     const { text, rating, user } = req.body;
     if (!text || !rating || !user || !user.email) return res.status(400).json({ ok: false, error: 'invalid' });
 
+    // Evitar múltiples reseñas por mismo email
     const exists = await Review.findOne({ 'user.email': user.email }).exec();
     if (exists) return res.status(409).json({ ok: false, error: 'user_has_review' });
 
@@ -158,6 +159,7 @@ app.post('/api/reviews', async (req, res) => {
     });
 
     await review.save();
+    // Asegurar usuario en collection Users
     await upsertUser({ email: user.email, name: user.name, picture: user.picture, registeredWith: 'google', createdAt: Date.now() });
     res.json({ ok: true, review });
   } catch (err) {
@@ -231,34 +233,6 @@ app.post('/api/documents', async (req, res) => {
   }
 });
 
-// **MULTER: mover configuración antes de usarla**
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  }
-});
-
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg','image/png','image/gif',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'video/mp4'
-    ];
-    cb(null, allowedTypes.includes(file.mimetype));
-  }
-});
-
 // POST /api/documents/upload (subir archivos)
 app.post('/api/documents/upload', upload.array('files', 5), async (req, res) => {
   try {
@@ -272,6 +246,7 @@ app.post('/api/documents/upload', upload.array('files', 5), async (req, res) => 
       return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
     }
 
+    // Procesar archivos subidos
     const files = req.files.map(file => ({
       name: file.originalname,
       type: file.mimetype,
@@ -312,12 +287,58 @@ app.get('/api/documents/search', async (req, res) => {
   }
 });
 
+// Configuración para subida de archivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${uuidv4()}${ext}`);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif',
+      'application/pdf', 
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'video/mp4'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de archivo no permitido'));
+    }
+  }
+});
+
 // Servir archivos estáticos
 app.use('/uploads', express.static('uploads'));
 
-// **REEMPLAZO DE __dirname para ES Modules**
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Middleware de manejo de errores (si hay un error, devolver JSON en vez de HTML)
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err && err.stack ? err.stack : err);
+  const status = err && err.status ? err.status : 500;
+  // intentar enviar JSON con mensaje y stack en dev
+  const payload = { ok: false, error: err && err.message ? err.message : 'server_error' };
+  if (process.env.NODE_ENV !== 'production' && err && err.stack) {
+    payload.stack = err.stack;
+  }
+  // si ya se comenzó a enviar respuesta, terminar
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(status).json(payload);
+});
 
 // Opcional: servir frontend estático si lo subes aquí
 app.use(express.static(path.join(__dirname, '..')));
