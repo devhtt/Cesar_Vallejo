@@ -119,7 +119,6 @@ app.post('/api/session_login', async (req, res) => {
 
 // POST /api/logout
 app.post('/api/logout', (req, res) => {
-  // Si usas cookies/JWT limpiar aquí
   res.json({ ok: true });
 });
 
@@ -144,7 +143,6 @@ app.post('/api/reviews', async (req, res) => {
     const { text, rating, user } = req.body;
     if (!text || !rating || !user || !user.email) return res.status(400).json({ ok: false, error: 'invalid' });
 
-    // Evitar múltiples reseñas por mismo email
     const exists = await Review.findOne({ 'user.email': user.email }).exec();
     if (exists) return res.status(409).json({ ok: false, error: 'user_has_review' });
 
@@ -159,7 +157,6 @@ app.post('/api/reviews', async (req, res) => {
     });
 
     await review.save();
-    // Asegurar usuario en collection Users
     await upsertUser({ email: user.email, name: user.name, picture: user.picture, registeredWith: 'google', createdAt: Date.now() });
     res.json({ ok: true, review });
   } catch (err) {
@@ -233,6 +230,34 @@ app.post('/api/documents', async (req, res) => {
   }
 });
 
+// **MULTER: mover configuración antes de usarla**
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${uuidv4()}${ext}`);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg','image/png','image/gif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'video/mp4'
+    ];
+    cb(null, allowedTypes.includes(file.mimetype));
+  }
+});
+
 // POST /api/documents/upload (subir archivos)
 app.post('/api/documents/upload', upload.array('files', 5), async (req, res) => {
   try {
@@ -246,7 +271,6 @@ app.post('/api/documents/upload', upload.array('files', 5), async (req, res) => 
       return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
     }
 
-    // Procesar archivos subidos
     const files = req.files.map(file => ({
       name: file.originalname,
       type: file.mimetype,
@@ -284,40 +308,6 @@ app.get('/api/documents/search', async (req, res) => {
   } catch (err) {
     console.error('Error buscando documentos:', err);
     res.status(500).json({ ok: false, error: 'Error en búsqueda' });
-  }
-});
-
-// Configuración para subida de archivos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  }
-});
-
-const upload = multer({ 
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif',
-      'application/pdf', 
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'video/mp4'
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Tipo de archivo no permitido'));
-    }
   }
 });
 
