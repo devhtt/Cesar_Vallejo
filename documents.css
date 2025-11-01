@@ -283,3 +283,65 @@
 .preview-remove:hover {
     background: #fde8e8;
 }
+
+/* Miniaturas y videos de attachments */
+.attachment-thumb {
+    width: 96px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: inline-block;
+    margin-right: 8px;
+    border: 1px solid #e9eef6;
+}
+
+.attachment-image {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #eef2f8;
+    text-decoration: none;
+    color: inherit;
+}
+
+.attachment-name {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.attachment-video {
+    display: inline-block;
+    margin: 6px;
+    padding: 6px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #eef2f8;
+}
+
+.attachment-video-elem {
+    width: 220px;
+    height: 124px;
+    display: block;
+    border-radius: 6px;
+    background: #000;
+}
+
+.attachment-audio {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 8px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #eef2f8;
+}
+
+/* pequeños ajustes responsivos */
+@media (max-width: 600px) {
+    .attachment-thumb { width: 72px; height: 54px; }
+    .attachment-video-elem { width: 160px; height: 90px; }
+}
