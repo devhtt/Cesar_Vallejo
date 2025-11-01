@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Práctica - Juego de Señales</title>
+  <link rel="icon" type="image/png" href="ucv.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="ucv.png" alt="logo" class="logo">
+      <div>
+        <div style="font-size:14px;color:#666">Universidad César Vallejo</div>
+        <h1>Práctica: Identifica la señal</h1>
+      </div>
+    </div>
+
+    <div class="center">
+      <div class="start-row">
+        <button id="startBtn" class="btn">Empezar el juego</button>
+      </div>
+
+      <div id="game" class="hidden">
+        <div style="display:flex;align-items:center;gap:12px;justify-content:center">
+          <div style="width:300px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>Ronda: <span id="round">0</span>/10</div>
+              <div>Correctas: <span id="correct">0</span></div>
+              <div>Malas: <span id="wrong">0</span></div>
+            </div>
+            <div class="timer-wrap" aria-hidden="false">
+              <div id="timerBar" class="timer-bar"></div>
+            </div>
+          </div>
+          <div class="time-text" id="timeText">00:30</div>
+        </div>
+
+        <div class="game-area">
+          <img id="questionImg" class="question-img" src="" alt="Pregunta">
+          <div class="options" id="optionsContainer">
+            <!-- 3 opciones se insertan dinámicamente -->
+          </div>
+
+          <div class="feedback" id="feedback"></div>
+
+          <div style="margin-top:8px">¿Qué señal es esta?</div>
+        </div>
+      </div>
+
+      <div id="endResult" class="result hidden"></div>
+    </div>
+  </div>
+
+  <script src="practica.js"></script>
+</body>
+</html>

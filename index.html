@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprende Lenguaje de Señas - UCV</title>
+    <link rel="icon" type="image/png" href="ucv.png">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(46, 125, 50, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="top-nav">
+            <div class="container">
+                <div class="logo-container">
+                    <img src="ucv.png" alt="Logo UCV" class="logo">
+                    <span class="university-name">Universidad César Vallejo</span>
+                </div>
+                <!-- Eliminado el div top-actions que contenía el botón de cerrar sesión -->
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-grid">
+                        <div class="hero-text">
+                            <h1>
+                                <span class="blue">Cuando el</span>
+                                <span class="red">lenguaje de señas</span><br>
+                                <span class="yellow">se une con la</span>
+                                <span class="green">innovación,</span><br>
+                                <span class="blue">la comunicación</span>
+                                <span class="signature">se transforma.</span>
+                            </h1>
+                        </div>
+                        <div class="hero-login" id="loginSection">
+                            <!-- panel de inicio de sesión alineado a la derecha -->
+                            <div class="login-panel">
+                                <div class="login-card">
+                                    <h2>Iniciar sesión</h2>
+                                    <p style="margin:8px 0 12px;color:#333">Inicia sesión usando tu cuenta de Google</p>
+                                    <div class="or" style="display:none">o</div>
+                                    <div id="googleSignContainer">
+                                        <div id="g_id_onload"
+                                             data-client_id="903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com"
+                                             data-callback="handleCredentialResponse"
+                                             data-auto_prompt="false"
+                                             data-auto_select="true"
+                                             data-ux_mode="popup"
+                                             data-context="signin">
+                                        </div>
+                                        <div class="g_id_signin" data-type="standard"></div>
+                                    </div>
+                                    <div style="margin-top:10px;">
+                                        <button id="btnContinue" class="btn" type="button">Iniciar sesión</button>
+                                        <button id="btnGuest" class="btn" type="button" onclick="location.href='seleccion.html'">Iniciar como invitado</button>
+                                    </div>
+                                    <!-- no hay inicio local: usar Google -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Panel de perfil de usuario (oculto por defecto) -->
+                        <div class="hero-login" id="profileSection" style="display:none;">
+                            <div class="profile-panel">
+                                <div class="profile-card">
+                                    <h2>Mi perfil</h2>
+                                    <div class="profile-avatar">
+                                        <img id="profilePic" src="https://ui-avatars.com/api/?name=U&background=4285F4&color=fff" alt="Foto de perfil">
+                                        <!-- Eliminada la opción de cambiar foto en la selección -->
+                                    </div>
+                                    <!-- Configuración de perfil eliminada: ahora solo se muestran datos -->
+                                    <div class="profile-field">
+                                        <label>Correo:</label>
+                                        <input id="profileEmail" type="email" disabled>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Nombre de usuario:</label>
+                                        <input id="profileName" type="text" disabled>
+                                    </div>
+                                    <div style="margin-top:12px;">
+                                        <button id="btnLogoutProfile" class="btn" type="button">Cerrar sesión</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+             </div>
+         </section>
+
+        <nav class="textonoma">
+            <div class="textope">
+               <h1> </h1>
+            </div>
+        </nav>
+    </main>
+
+    <div id="notification" class="notification">Sesión guardada</div>
+
+    <script src="main.js"></script>
+</body>
+</html>
