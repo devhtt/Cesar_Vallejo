@@ -7,10 +7,11 @@ import mongoose from 'mongoose';
 import path from 'path';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url'; // agregado
 
 const PORT = process.env.PORT || 5000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com';
-const MONGODB_URI = process.env.MONGODB_URI || ''; // Set in Render
+const MONGODB_URI = process.env.MONGODB_URI || ''; // Set en Render
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -313,6 +314,10 @@ app.get('/api/documents/search', async (req, res) => {
 
 // Servir archivos estáticos
 app.use('/uploads', express.static('uploads'));
+
+// **REEMPLAZO DE __dirname para ES Modules**
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Opcional: servir frontend estático si lo subes aquí
 app.use(express.static(path.join(__dirname, '..')));
