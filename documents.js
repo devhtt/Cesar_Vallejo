@@ -40,23 +40,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('no_session');
             }
 
-            // Primero crear el documento
-            const formData = new FormData();
-            formData.append('content', content);
-            formData.append('author', user.name || 'Usuario');
-            formData.append('authorEmail', user.email); // <-- corregido
-            formData.append('picture', user.picture || '');
-
-            // Agregar archivos si hay
-            if (files && files.length) {
-                Array.from(files).forEach(file => {
-                    formData.append('files', file);
-                });
-            }
-
+            // Enviar solo JSON al endpoint de documentos
             const response = await fetch(`${BASE_URL}/api/documents`, {
                 method: 'POST',
-                body: formData,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: content,
+                    author: user.name || 'Usuario',
+                    authorEmail: user.email
+                }),
                 credentials: 'include'
             });
 
@@ -65,7 +57,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(error.error || 'server_error');
             }
 
-            return await response.json();
+            const data = await response.json();
+            const postId = data.document._id;
+
+            // Subir archivos si existen
+            if (files && files.length) {
+                const formData = new FormData();
+                Array.from(files).forEach(file => formData.append('files', file));
+                formData.append('postId', postId);
+
+                const uploadResp = await fetch(`${BASE_URL}/api/documents/upload`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!uploadResp.ok) {
+                    const err = await uploadResp.json();
+                    console.error('Error subiendo archivos:', err);
+                }
+            }
+
+            return data;
         } catch (err) {
             console.error('Error publicando documento:', err);
             if (err.message === 'no_session') {
@@ -77,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Función para cargar documentos corregida (antes loadPosts)
+    // Función para cargar documentos
     async function loadDocuments(searchQuery = '') {
         try {
             const url = searchQuery 
@@ -131,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // **Formulario de publicación corregido**
+    // Formulario de publicación corregido
     const form = document.getElementById('postForm');
     if (form) {
         form.addEventListener('submit', async function(e) {
@@ -149,29 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitBtn) submitBtn.disabled = true;
 
             try {
-                const currentEmail = localStorage.getItem('currentUser');
-                const users = JSON.parse(localStorage.getItem('registeredUsers') || '{}');
-                const user = currentEmail && users[currentEmail];
-                if (!user) throw new Error('no_session');
-
-                const formData = new FormData();
-                formData.append('content', content);
-                formData.append('author', user.name || 'Usuario');
-                formData.append('authorEmail', user.email); // <-- corregido
-                if (files && files.length) {
-                    Array.from(files).forEach(file => formData.append('files', file));
-                }
-
-                const response = await fetch(`${BASE_URL}/api/documents`, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'server_error');
-                }
+                await postDocument(content, files);
 
                 // Limpiar formulario y recargar documentos
                 form.reset();
@@ -185,7 +176,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             } catch (err) {
                 console.error('Error al publicar documento:', err);
-                alert(err.message === 'no_session' ? 'Debes iniciar sesión con Google' : 'Error al publicar. Por favor intenta nuevamente.');
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
             }
@@ -218,7 +208,7 @@ function debounce(fn, delay) {
     }
 }
 
-// Función mejorada para iconos y previsualizaciones
+// Función para iconos
 function getFileIcon(type) {
     const icons = {
         'image': '🖼️',
@@ -241,7 +231,7 @@ function getFileIcon(type) {
     return icons.default;
 }
 
-// Función para previsualizar archivos
+// Previsualización de archivos
 function createFilePreview(file) {
     if (file.type.startsWith('image/')) {
         return `
@@ -290,7 +280,7 @@ function createFilePreview(file) {
     }
 }
 
-// Mejorar manejo de archivos en el input
+// Manejo del input de archivos
 const fileInput = document.getElementById('fileInput');
 const previewContainer = document.getElementById('filePreviewContainer');
 
@@ -306,7 +296,6 @@ if (fileInput && previewContainer) {
         previewContainer.innerHTML = files.map(file => createFilePreview(file)).join('');
         previewContainer.style.display = 'block';
 
-        // Agregar listeners para remover archivos
         previewContainer.querySelectorAll('.preview-remove').forEach(btn => {
             btn.onclick = function() {
                 const fileName = this.dataset.name;
