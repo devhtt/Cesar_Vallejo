@@ -24,6 +24,18 @@ function escapeHtml(str) {
     }[m]));
 }
 
+// helper: parsear respuesta con fallback a texto (por si el server devuelve HTML de error)
+async function parseResponse(res) {
+	// intentar JSON sólo cuando el content-type indica JSON
+	const ct = res.headers.get('content-type') || '';
+	if (ct.includes('application/json')) {
+		return res.json();
+	}
+	// si no es JSON devolver texto crudo (puede ser HTML de error)
+	const text = await res.text();
+	return { ok: res.ok, _rawText: text };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Estado inicial
     let currentPage = 1;
@@ -40,57 +52,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('no_session');
             }
 
-            // Enviar solo JSON al endpoint de documentos
+            // Primero crear el documento
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('author', user.name || 'Usuario');
+            formData.append('email', user.email);
+            formData.append('picture', user.picture || '');
+
+            // Agregar archivos si hay
+            if (files && files.length) {
+                Array.from(files).forEach(file => {
+                    formData.append('files', file);
+                });
+            }
+
             const response = await fetch(`${BASE_URL}/api/documents`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    content: content,
-                    author: user.name || 'Usuario',
-                    authorEmail: user.email
-                }),
+                body: formData,
                 credentials: 'include'
             });
 
+            // parse seguro
+            const parsed = await parseResponse(response);
+
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'server_error');
+                // si el backend devolvió JSON con error -> mostrarlo; si devolvió HTML -> mostrar text
+                const errMsg = (parsed && parsed.error) ? parsed.error : (parsed && parsed._rawText) ? parsed._rawText : 'server_error';
+                throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
             }
 
-            const data = await response.json();
-            const postId = data.document._id;
-
-            // Subir archivos si existen
-            if (files && files.length) {
-                const formData = new FormData();
-                Array.from(files).forEach(file => formData.append('files', file));
-                formData.append('postId', postId);
-
-                const uploadResp = await fetch(`${BASE_URL}/api/documents/upload`, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-
-                if (!uploadResp.ok) {
-                    const err = await uploadResp.json();
-                    console.error('Error subiendo archivos:', err);
-                }
-            }
-
-            return data;
+            return parsed; // JSON esperado
         } catch (err) {
             console.error('Error publicando documento:', err);
             if (err.message === 'no_session') {
                 alert('Debes iniciar sesión con Google para publicar');
             } else {
-                alert('Error al publicar. Por favor intenta nuevamente.');
+                // mostrar mensaje más informativo si el servidor devolvió HTML
+                alert('Error al publicar. ' + (err.message || 'Por favor intenta nuevamente.'));
             }
             throw err;
         }
     }
 
-    // Función para cargar documentos
+    // Función para cargar documentos corregida (antes loadPosts)
     async function loadDocuments(searchQuery = '') {
         try {
             const url = searchQuery 
@@ -101,11 +105,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'include'
             });
 
-            if (!response.ok) throw new Error('server_error');
-            const data = await response.json();
-            return data.ok ? {
-                documents: data.documents,
-                total: data.total
+            const parsed = await parseResponse(response);
+
+            if (!response.ok) {
+                const errMsg = (parsed && parsed.error) ? parsed.error : (parsed && parsed._rawText) ? parsed._rawText : 'server_error';
+                throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+            }
+
+            return parsed.ok ? {
+                documents: parsed.documents,
+                total: parsed.total
             } : { documents: [], total: 0 };
         } catch (err) {
             console.error('Error cargando documentos:', err);
@@ -144,9 +153,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Formulario de publicación corregido
+    // Manejar formulario de publicación
     const form = document.getElementById('postForm');
     if (form) {
+        // manejar el submit (ya usaba fetch); mejorar el control de errores al parsear
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -162,20 +172,35 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitBtn) submitBtn.disabled = true;
 
             try {
-                await postDocument(content, files);
+                const formData = new FormData();
+                formData.append('content', content);
+                if (files && files.length) Array.from(files).forEach(file => formData.append('files', file));
 
-                // Limpiar formulario y recargar documentos
-                form.reset();
-                const previewContainer = document.getElementById('filePreviewContainer');
-                if (previewContainer) {
-                    previewContainer.innerHTML = '';
-                    previewContainer.style.display = 'none';
+                const response = await fetch(`${BASE_URL}/api/documents`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                const parsed = await parseResponse(response);
+                if (!response.ok) {
+                    const errMsg = (parsed && parsed.error) ? parsed.error : (parsed && parsed._rawText) ? parsed._rawText : 'Error al publicar';
+                    throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
                 }
+
+                // Limpiar formulario
+                form.reset();
+                document.getElementById('filePreviewContainer').innerHTML = '';
+                document.getElementById('filePreviewContainer').style.display = 'none';
+                
+                // Recargar documentos
                 displayDocuments();
+                
                 alert('¡Publicado correctamente!');
 
             } catch (err) {
-                console.error('Error al publicar documento:', err);
+                console.error('Error:', err);
+                alert('Error al publicar. ' + (err.message || 'Intenta nuevamente.'));
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
             }
@@ -199,6 +224,15 @@ document.addEventListener('DOMContentLoaded', function() {
     displayDocuments();
 });
 
+// Buscar posts
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('input', debounce(() => {
+        currentPage = 1;
+        displayDocuments();
+    }, 300));
+}
+
 // Debounce helper
 function debounce(fn, delay) {
     let timeoutId;
@@ -208,7 +242,7 @@ function debounce(fn, delay) {
     }
 }
 
-// Función para iconos
+// Función mejorada para iconos y previsualizaciones
 function getFileIcon(type) {
     const icons = {
         'image': '🖼️',
@@ -231,7 +265,7 @@ function getFileIcon(type) {
     return icons.default;
 }
 
-// Previsualización de archivos
+// Función para previsualizar archivos
 function createFilePreview(file) {
     if (file.type.startsWith('image/')) {
         return `
@@ -280,7 +314,7 @@ function createFilePreview(file) {
     }
 }
 
-// Manejo del input de archivos
+// Mejorar manejo de archivos en el input
 const fileInput = document.getElementById('fileInput');
 const previewContainer = document.getElementById('filePreviewContainer');
 
@@ -296,6 +330,7 @@ if (fileInput && previewContainer) {
         previewContainer.innerHTML = files.map(file => createFilePreview(file)).join('');
         previewContainer.style.display = 'block';
 
+        // Agregar listeners para remover archivos
         previewContainer.querySelectorAll('.preview-remove').forEach(btn => {
             btn.onclick = function() {
                 const fileName = this.dataset.name;
