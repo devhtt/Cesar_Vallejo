@@ -22,7 +22,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const app = express();
 app.use(bodyParser.json());
 
-// CORS configurado para tu frontend en GitHub Pages y Render
+// CORS configurado para tu frontend
 app.use(cors({ 
     origin: [
         'http://localhost:5000',
@@ -95,11 +95,10 @@ const Document = mongoose.model('Document', documentSchema);
 async function upsertUser(userObj) {
   if (!userObj || !userObj.email) return null;
   const opts = { upsert: true, new: true, setDefaultsOnInsert: true };
-  const u = await User.findOneAndUpdate({ email: userObj.email }, userObj, opts).exec();
-  return u;
+  return await User.findOneAndUpdate({ email: userObj.email }, userObj, opts).exec();
 }
 
-// POST /api/session_login  { id_token }
+// POST /api/session_login
 app.post('/api/session_login', async (req, res) => {
   const { id_token } = req.body;
   if (!id_token) return res.status(400).json({ ok: false, error: 'Missing id_token' });
@@ -127,7 +126,7 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-// GET /api/reviews?page=1&limit=10
+// GET /api/reviews
 app.get('/api/reviews', async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page || '1'));
@@ -142,7 +141,7 @@ app.get('/api/reviews', async (req, res) => {
   }
 });
 
-// POST /api/reviews  { text, rating, user: { email, name, picture } }
+// POST /api/reviews
 app.post('/api/reviews', async (req, res) => {
   try {
     const { text, rating, user } = req.body;
@@ -183,7 +182,7 @@ app.get('/api/users/:email', async (req, res) => {
   }
 });
 
-// GET /api/documents?page=1&limit=10
+// GET /api/documents
 app.get('/api/documents', async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page || '1'));
@@ -192,11 +191,7 @@ app.get('/api/documents', async (req, res) => {
     
     const [total, items] = await Promise.all([
       Document.countDocuments(),
-      Document.find()
-        .sort({ date: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean()
+      Document.find().sort({ date: -1 }).skip(skip).limit(limit).lean()
     ]);
 
     res.json({ ok: true, documents: items, total });
@@ -206,21 +201,18 @@ app.get('/api/documents', async (req, res) => {
   }
 });
 
-// Configuración de multer (almacenar en /uploads con nombres únicos)
+// Configuración de multer
 const uploadDir = 'uploads';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '';
-    cb(null, `${uuidv4()}${ext}`);
-  }
+  filename: (req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`)
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, 
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = [
       'image/jpeg','image/png','image/gif',
@@ -243,25 +235,19 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error:', err && err.stack ? err.stack : err);
   const status = err && err.status ? err.status : 500;
   const payload = { ok: false, error: err && err.message ? err.message : 'server_error' };
-  if (process.env.NODE_ENV !== 'production' && err && err.stack) {
-    payload.stack = err.stack;
-  }
-  if (res.headersSent) {
-    return next(err);
-  }
+  if (process.env.NODE_ENV !== 'production' && err && err.stack) payload.stack = err.stack;
+  if (res.headersSent) return next(err);
   res.status(status).json(payload);
 });
 
-// POST /api/documents - acepta JSON o form-data (sin archivos)
+// POST /api/documents
 app.post('/api/documents', upload.none(), async (req, res) => {
   try {
     const content = (req.body.content || '').toString();
     const author = req.body.author || req.body.authorName || 'Usuario';
     const authorEmail = req.body.authorEmail || req.body.email;
 
-    if (!authorEmail) {
-      return res.status(400).json({ ok: false, error: 'Faltan datos requeridos: authorEmail' });
-    }
+    if (!authorEmail) return res.status(400).json({ ok: false, error: 'Faltan datos requeridos: authorEmail' });
 
     let user = await User.findOne({ email: authorEmail }).lean().exec();
     if (!user) {
@@ -291,13 +277,11 @@ app.post('/api/documents', upload.none(), async (req, res) => {
   }
 });
 
-// POST /api/documents/upload (subir archivos y asociarlos a postId)
+// POST /api/documents/upload
 app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => {
   try {
     const postId = req.body.postId;
-    if (!postId || !req.files || req.files.length === 0) {
-      return res.status(400).json({ ok: false, error: 'Faltan archivos o postId' });
-    }
+    if (!postId || !req.files || req.files.length === 0) return res.status(400).json({ ok: false, error: 'Faltan archivos o postId' });
 
     const doc = await Document.findById(postId);
     if (!doc) return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
@@ -324,18 +308,8 @@ app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => 
 app.get('/api/documents/search', async (req, res) => {
   try {
     const { q } = req.query;
-    const query = q ? {
-      $or: [
-        { content: { $regex: q, $options: 'i' } },
-        { author: { $regex: q, $options: 'i' } }
-      ]
-    } : {};
-
-    const documents = await Document.find(query)
-      .sort({ date: -1 })
-      .limit(20)
-      .lean();
-
+    const query = q ? { $or: [{ content: { $regex: q, $options: 'i' } }, { author: { $regex: q, $options: 'i' } }] } : {};
+    const documents = await Document.find(query).sort({ date: -1 }).limit(20).lean();
     res.json({ ok: true, documents });
   } catch (err) {
     console.error('Error buscando documentos:', err);
@@ -346,12 +320,7 @@ app.get('/api/documents/search', async (req, res) => {
 // Servir frontend estático
 app.use(express.static(path.join(__dirname, '..')));
 
+// Escuchar solo una vez
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
