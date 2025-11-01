@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const postsPerPage = 5;
 
     // Función para publicar documento (similar a postReview)
-    async function postDocument(content, files) {
+    async function postDocument(content) {
         try {
             const currentEmail = localStorage.getItem('currentUser');
             const users = JSON.parse(localStorage.getItem('registeredUsers') || '{}');
@@ -52,47 +52,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('no_session');
             }
 
-            // Primero crear el documento
-            const formData = new FormData();
-            formData.append('content', content);
-            formData.append('author', user.name || 'Usuario');
-            formData.append('email', user.email);
-            formData.append('picture', user.picture || '');
+            const body = {
+                content,
+                author: user.name || 'Usuario',
+                authorEmail: user.email,
+                authorPic: user.picture || ''
+            };
 
-            // Agregar archivos si hay
-            if (files && files.length) {
-                Array.from(files).forEach(file => {
-                    formData.append('files', file);
-                });
-            }
-
-            const response = await fetch(`${BASE_URL}/api/documents`, {
+            const res = await fetch(`${BASE_URL}/api/documents`, {
                 method: 'POST',
-                body: formData,
-                credentials: 'include'
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(body)
             });
 
-            // parse seguro
-            const parsed = await parseResponse(response);
-
-            if (!response.ok) {
-                // si el backend devolvió JSON con error -> mostrarlo; si devolvió HTML -> mostrar text
+            const parsed = await parseResponse(res);
+            if (!res.ok) {
                 const errMsg = (parsed && parsed.error) ? parsed.error : (parsed && parsed._rawText) ? parsed._rawText : 'server_error';
                 throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
             }
 
-            return parsed; // JSON esperado
+            // Esperamos { ok:true, document, postId } desde backend
+            return parsed;
         } catch (err) {
             console.error('Error publicando documento:', err);
-            if (err.message === 'no_session') {
-                alert('Debes iniciar sesión con Google para publicar');
-            } else {
-                // mostrar mensaje más informativo si el servidor devolvió HTML
-                alert('Error al publicar. ' + (err.message || 'Por favor intenta nuevamente.'));
-            }
             throw err;
         }
     }
+
+    // Función para subir archivos a /api/documents/upload usando FormData (GridFS/multer en backend)
+    async function uploadFiles(files, postId) {
+	// files: FileList o array
+	if (!files || files.length === 0) return { ok: true, files: [] };
+
+	const fd = new FormData();
+	Array.from(files).forEach(f => fd.append('files', f));
+	fd.append('postId', postId);
+
+	const res = await fetch(`${BASE_URL}/api/documents/upload`, {
+		method: 'POST',
+		body: fd,
+		credentials: 'include'
+	});
+	const parsed = await parseResponse(res);
+	if (!res.ok) {
+		const errMsg = (parsed && parsed.error) ? parsed.error : (parsed && parsed._rawText) ? parsed._rawText : 'upload_error';
+		throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+	}
+	return parsed;
+}
 
     // Función para cargar documentos corregida (antes loadPosts)
     async function loadDocuments(searchQuery = '') {
@@ -156,10 +164,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejar formulario de publicación
     const form = document.getElementById('postForm');
     if (form) {
-        // manejar el submit (ya usaba fetch); mejorar el control de errores al parsear
-        form.addEventListener('submit', async function(e) {
+        form.addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const content = document.getElementById('postContent').value.trim();
             const files = document.getElementById('fileInput').files;
 
@@ -172,34 +179,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitBtn) submitBtn.disabled = true;
 
             try {
-                const formData = new FormData();
-                formData.append('content', content);
-                if (files && files.length) Array.from(files).forEach(file => formData.append('files', file));
+                // 1) Crear documento (JSON)
+                const createResult = await postDocument(content);
+                const postId = (createResult && (createResult.postId || (createResult.document && createResult.document._id))) 
+                    ? (createResult.postId || (createResult.document && createResult.document._id))
+                    : null;
 
-                const response = await fetch(`${BASE_URL}/api/documents`, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-
-                const parsed = await parseResponse(response);
-                if (!response.ok) {
-                    const errMsg = (parsed && parsed.error) ? parsed.error : (parsed && parsed._rawText) ? parsed._rawText : 'Error al publicar';
-                    throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+                // 2) Si hay archivos y tenemos postId, subirlos
+                if (files && files.length) {
+                    if (!postId) throw new Error('No se obtuvo postId para subir archivos');
+                    await uploadFiles(files, postId);
                 }
 
-                // Limpiar formulario
+                // Limpiar formulario y preview
                 form.reset();
-                document.getElementById('filePreviewContainer').innerHTML = '';
-                document.getElementById('filePreviewContainer').style.display = 'none';
-                
-                // Recargar documentos
-                displayDocuments();
-                
-                alert('¡Publicado correctamente!');
+                const preview = document.getElementById('filePreviewContainer');
+                if (preview) { preview.innerHTML = ''; preview.style.display = 'none'; }
 
+                // Recargar listado
+                await displayDocuments();
+
+                alert('¡Publicado correctamente!');
             } catch (err) {
                 console.error('Error:', err);
+                // mostrar mensaje útil si el backend devolvió HTML/text
                 alert('Error al publicar. ' + (err.message || 'Intenta nuevamente.'));
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
@@ -350,4 +353,3 @@ if (fileInput && previewContainer) {
         });
     });
 }
-
