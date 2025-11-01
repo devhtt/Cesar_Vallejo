@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('content', content);
             formData.append('author', user.name || 'Usuario');
-            formData.append('authorEmail', user.email);
+            formData.append('authorEmail', user.email); // <-- corregido
             formData.append('picture', user.picture || '');
 
             // Agregar archivos si hay
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Manejar formulario de publicación
+    // **Formulario de publicación corregido**
     const form = document.getElementById('postForm');
     if (form) {
         form.addEventListener('submit', async function(e) {
@@ -149,14 +149,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitBtn) submitBtn.disabled = true;
 
             try {
+                const currentEmail = localStorage.getItem('currentUser');
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '{}');
+                const user = currentEmail && users[currentEmail];
+                if (!user) throw new Error('no_session');
+
                 const formData = new FormData();
                 formData.append('content', content);
-                
-                // Agregar archivos si hay
+                formData.append('author', user.name || 'Usuario');
+                formData.append('authorEmail', user.email); // <-- corregido
                 if (files && files.length) {
-                    Array.from(files).forEach(file => {
-                        formData.append('files', file);
-                    });
+                    Array.from(files).forEach(file => formData.append('files', file));
                 }
 
                 const response = await fetch(`${BASE_URL}/api/documents`, {
@@ -166,22 +169,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error al publicar');
+                    const error = await response.json();
+                    throw new Error(error.error || 'server_error');
                 }
 
-                // Limpiar formulario
+                // Limpiar formulario y recargar documentos
                 form.reset();
-                document.getElementById('filePreviewContainer').innerHTML = '';
-                document.getElementById('filePreviewContainer').style.display = 'none';
-                
-                // Recargar documentos
+                const previewContainer = document.getElementById('filePreviewContainer');
+                if (previewContainer) {
+                    previewContainer.innerHTML = '';
+                    previewContainer.style.display = 'none';
+                }
                 displayDocuments();
-                
                 alert('¡Publicado correctamente!');
 
             } catch (err) {
-                console.error('Error:', err);
-                alert('Error al publicar. Por favor intenta nuevamente.');
+                console.error('Error al publicar documento:', err);
+                alert(err.message === 'no_session' ? 'Debes iniciar sesión con Google' : 'Error al publicar. Por favor intenta nuevamente.');
             } finally {
                 if (submitBtn) submitBtn.disabled = false;
             }
@@ -204,15 +208,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicialización
     displayDocuments();
 });
-
-// Buscar posts
-const searchInput = document.getElementById('searchInput');
-if (searchInput) {
-    searchInput.addEventListener('input', debounce(() => {
-        currentPage = 1;
-        displayDocuments();
-    }, 300));
-}
 
 // Debounce helper
 function debounce(fn, delay) {
@@ -331,4 +326,3 @@ if (fileInput && previewContainer) {
         });
     });
 }
-
