@@ -116,7 +116,48 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     postsList.innerHTML = documents.map(doc => {
-      const filesHtml = doc.files && doc.files.length ? `<div class="post-attachments">${doc.files.map(f => `<a href="${escapeHtml(f.url)}" class="attachment-link" target="_blank" rel="noopener noreferrer" download>${getFileIcon(f.mime || f.type)} ${escapeHtml(f.name)}</a>`).join('')}</div>` : '';
+      // Construir HTML para attachments: soporte image, video y enlaces
+      const attachmentsHtml = (doc.files && doc.files.length) ? `
+          <div class="post-attachments">
+              ${doc.files.map(file => {
+                  const mime = file.mime || file.type || '';
+                  // imagen -> miniatura que abre en nueva pestaña
+                  if (mime.startsWith('image/')) {
+                    return `
+                        <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link attachment-image" rel="noopener noreferrer">
+                            <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" class="attachment-thumb">
+                            <span class="attachment-name">${escapeHtml(file.name)}</span>
+                        </a>
+                    `;
+                  }
+                  // video -> elemento video reproducible inline
+                  if (mime.startsWith('video/')) {
+                    return `
+                        <div class="attachment-video">
+                            <video src="${escapeHtml(file.url)}" controls class="attachment-video-elem"></video>
+                            <div class="attachment-name">${escapeHtml(file.name)}</div>
+                        </div>
+                    `;
+                  }
+                  // audio -> enlace o control, mostrar como enlace descargable
+                  if (mime.startsWith('audio/')) {
+                    return `
+                        <div class="attachment-audio">
+                            <audio src="${escapeHtml(file.url)}" controls></audio>
+                            <div class="attachment-name">${escapeHtml(file.name)}</div>
+                        </div>
+                    `;
+                  }
+                  // default -> link de descarga con icono
+                  return `
+                      <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link" rel="noopener noreferrer" download>
+                          ${getFileIcon(mime)} ${escapeHtml(file.name)}
+                      </a>
+                  `;
+              }).join('')}
+          </div>
+      ` : '';
+
       return `
         <div class="post">
           <div class="post-header">
@@ -127,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
           <div class="post-content">${escapeHtml(doc.content)}</div>
-          ${filesHtml}
+          ${attachmentsHtml}
         </div>
       `;
     }).join('');
