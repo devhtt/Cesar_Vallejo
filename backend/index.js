@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com';
-const MONGODB_URI = process.env.MONGODB_URI || ''; // Set en Render
+const MONGODB_URI = process.env.MONGODB_URI || '';
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -93,7 +93,7 @@ async function upsertUser(userObj) {
   return await User.findOneAndUpdate({ email: userObj.email }, userObj, { upsert: true, new: true, setDefaultsOnInsert: true }).exec();
 }
 
-// POST /api/session_login
+// LOGIN
 app.post('/api/session_login', async (req, res) => {
   const { id_token } = req.body;
   if (!id_token) return res.status(400).json({ ok: false, error: 'Missing id_token' });
@@ -120,6 +120,7 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// REVIEWS
 app.get('/api/reviews', async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page || '1'));
@@ -173,6 +174,7 @@ app.get('/api/users/:email', async (req, res) => {
   }
 });
 
+// DOCUMENTS
 app.get('/api/documents', async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page || '1'));
@@ -191,7 +193,7 @@ app.get('/api/documents', async (req, res) => {
   }
 });
 
-// Configuración multer
+// MULTER UPLOAD
 const uploadDir = 'uploads';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -219,6 +221,7 @@ const upload = multer({
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+// ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err && err.stack ? err.stack : err);
   const status = err && err.status ? err.status : 500;
@@ -228,7 +231,7 @@ app.use((err, req, res, next) => {
   res.status(status).json(payload);
 });
 
-// POST /api/documents
+// CREATE DOCUMENT
 app.post('/api/documents', upload.none(), async (req, res) => {
   try {
     const content = (req.body.content || '').toString();
@@ -265,7 +268,7 @@ app.post('/api/documents', upload.none(), async (req, res) => {
   }
 });
 
-// POST /api/documents/upload
+// UPLOAD FILES
 app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => {
   try {
     const postId = req.body.postId;
@@ -276,9 +279,11 @@ app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => 
     const doc = await Document.findById(postId);
     if (!doc) return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
 
-    const baseUrl = (process.env.BASE_URL) ? process.env.BASE_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+    // Force HTTPS in URLs to avoid mixed content
+    const baseUrl = process.env.BASE_URL
+      ? process.env.BASE_URL.replace(/\/$/, '')
+      : `https://${req.get('host')}`;
 
-    // Mapear archivos al formato esperado por el esquema
     const files = req.files.map(f => ({
       name: f.originalname,
       mime: f.mimetype,
@@ -286,7 +291,6 @@ app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => 
       path: f.path
     }));
 
-    // Añadir al array de subdocumentos
     doc.files = (doc.files || []).concat(files);
     await doc.save();
 
@@ -297,6 +301,7 @@ app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => 
   }
 });
 
+// SEARCH DOCUMENTS
 app.get('/api/documents/search', async (req, res) => {
   try {
     const { q } = req.query;
