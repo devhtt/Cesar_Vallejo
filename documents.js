@@ -25,15 +25,16 @@ function escapeHtml(str) {
   return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-function getFileIcon(type) {
-  if (!type) return '📎';
-  if (type.startsWith('image/')) return '🖼️';
-  if (type.includes('pdf')) return '📄';
-  if (type.includes('word') || type.includes('document')) return '📝';
-  if (type.includes('sheet') || type.includes('excel')) return '📊';
-  if (type.includes('video')) return '🎥';
-  if (type.includes('audio')) return '🎵';
-  if (type.includes('text')) return '📃';
+function getFileIcon(typeOrMime) {
+  const t = typeOrMime || '';
+  if (!t) return '📎';
+  if (t.startsWith('image/')) return '🖼️';
+  if (t.includes('pdf')) return '📄';
+  if (t.includes('word') || t.includes('document')) return '📝';
+  if (t.includes('sheet') || t.includes('excel')) return '📊';
+  if (t.includes('video')) return '🎥';
+  if (t.includes('audio')) return '🎵';
+  if (t.includes('text')) return '📃';
   return '📎';
 }
 
@@ -115,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     postsList.innerHTML = documents.map(doc => {
-      const filesHtml = doc.files && doc.files.length ? `<div class="post-attachments">${doc.files.map(f => `<a href="${escapeHtml(f.url)}" class="attachment-link" target="_blank" rel="noopener noreferrer" download>${getFileIcon(f.type)} ${escapeHtml(f.name)}</a>`).join('')}</div>` : '';
+      const filesHtml = doc.files && doc.files.length ? `<div class="post-attachments">${doc.files.map(f => `<a href="${escapeHtml(f.url)}" class="attachment-link" target="_blank" rel="noopener noreferrer" download>${getFileIcon(f.mime || f.type)} ${escapeHtml(f.name)}</a>`).join('')}</div>` : '';
       return `
         <div class="post">
           <div class="post-header">
