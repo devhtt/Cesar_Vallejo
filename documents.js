@@ -350,3 +350,4 @@ if (fileInput && previewContainer) {
         });
     });
 }
+
