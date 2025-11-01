@@ -4,7 +4,12 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// ES module: definir __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '903625348841-bmkhrd53eok4bgo2j4pfhrijck43pgdb.apps.googleusercontent.com';
@@ -73,8 +78,7 @@ const Review = mongoose.model('Review', reviewSchema);
 async function upsertUser(userObj) {
   if (!userObj || !userObj.email) return null;
   const opts = { upsert: true, new: true, setDefaultsOnInsert: true };
-  const u = await User.findOneAndUpdate({ email: userObj.email }, userObj, opts).exec();
-  return u;
+  return await User.findOneAndUpdate({ email: userObj.email }, userObj, opts).exec();
 }
 
 // POST /api/session_login  { id_token }
@@ -102,7 +106,6 @@ app.post('/api/session_login', async (req, res) => {
 
 // POST /api/logout
 app.post('/api/logout', (req, res) => {
-  // Si usas cookies/JWT limpiar aquí
   res.json({ ok: true });
 });
 
@@ -127,7 +130,6 @@ app.post('/api/reviews', async (req, res) => {
     const { text, rating, user } = req.body;
     if (!text || !rating || !user || !user.email) return res.status(400).json({ ok: false, error: 'invalid' });
 
-    // Evitar múltiples reseñas por mismo email
     const exists = await Review.findOne({ 'user.email': user.email }).exec();
     if (exists) return res.status(409).json({ ok: false, error: 'user_has_review' });
 
@@ -142,7 +144,6 @@ app.post('/api/reviews', async (req, res) => {
     });
 
     await review.save();
-    // Asegurar usuario en collection Users
     await upsertUser({ email: user.email, name: user.name, picture: user.picture, registeredWith: 'google', createdAt: Date.now() });
     res.json({ ok: true, review });
   } catch (err) {
@@ -164,9 +165,10 @@ app.get('/api/users/:email', async (req, res) => {
   }
 });
 
-// Opcional: servir frontend estático si lo subes aquí
-app.use(express.static(path.join(__dirname, '..')));
+// Servir frontend estático
+app.use(express.static(join(__dirname, '..')));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
