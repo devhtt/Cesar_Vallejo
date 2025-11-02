@@ -197,8 +197,11 @@ app.get('/api/documents', async (req, res) => {
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-// Servir archivos estáticos con cache-control
-app.use('/uploads', express.static(uploadDir, {
+// Servir archivos estáticos con cache-control y permitir CORS para medios
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(uploadDir, {
   maxAge: '1h',
   etag: true
 }));
@@ -225,7 +228,8 @@ const upload = multer({
   }
 });
 
-// Modificar el handler de upload para usar URLs absolutas
+// REEMPLAZO: único handler robusto para /api/documents/upload
+// (sustituir cualquier otro handler /api/documents/upload anterior)
 app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => {
   try {
     const postId = req.body.postId;
@@ -236,18 +240,24 @@ app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => 
     const doc = await Document.findById(postId);
     if (!doc) return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
 
-    // Construir URLs absolutas
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    // Construir base URL desde env o desde la petición (protocol + host)
+    const baseUrl = (process.env.BASE_URL && process.env.BASE_URL.length > 0)
+      ? process.env.BASE_URL.replace(/\/$/, '')
+      : `${req.protocol}://${req.get('host')}`;
+
     const files = req.files.map(f => ({
       name: f.originalname,
+      // guardar ambas claves para compatibilidad: mime y type
+      mime: f.mimetype,
       type: f.mimetype,
       url: `${baseUrl}/uploads/${f.filename}`,
-      path: `uploads/${f.filename}`
+      path: f.path ? f.path.replace(/^\/+/, '') : `uploads/${f.filename}`
     }));
 
-    doc.files.push(...files);
+    doc.files = (doc.files || []).concat(files);
     await doc.save();
 
+    // devolver las URLs absolutas al frontend
     res.json({ ok: true, files });
   } catch (err) {
     console.error('Error subiendo archivos:', err);
@@ -313,7 +323,7 @@ app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => 
     const doc = await Document.findById(postId);
     if (!doc) return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
 
-    // Force HTTPS in URLs to avoid mixed content
+    // Force HTTPS in URLs to evitar mixed content
     const baseUrl = process.env.BASE_URL
       ? process.env.BASE_URL.replace(/\/$/, '')
       : `https://${req.get('host')}`;
