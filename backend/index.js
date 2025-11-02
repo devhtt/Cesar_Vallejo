@@ -193,9 +193,15 @@ app.get('/api/documents', async (req, res) => {
   }
 });
 
-// MULTER UPLOAD
-const uploadDir = 'uploads';
+// Configuración de multer y uploads
+const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+// Servir archivos estáticos con cache-control
+app.use('/uploads', express.static(uploadDir, {
+  maxAge: '1h',
+  etag: true
+}));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -219,7 +225,35 @@ const upload = multer({
   }
 });
 
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Modificar el handler de upload para usar URLs absolutas
+app.post('/api/documents/upload', upload.array('files', 8), async (req, res) => {
+  try {
+    const postId = req.body.postId;
+    if (!postId || !req.files || req.files.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Faltan archivos o postId' });
+    }
+
+    const doc = await Document.findById(postId);
+    if (!doc) return res.status(404).json({ ok: false, error: 'Documento no encontrado' });
+
+    // Construir URLs absolutas
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const files = req.files.map(f => ({
+      name: f.originalname,
+      type: f.mimetype,
+      url: `${baseUrl}/uploads/${f.filename}`,
+      path: `uploads/${f.filename}`
+    }));
+
+    doc.files.push(...files);
+    await doc.save();
+
+    res.json({ ok: true, files });
+  } catch (err) {
+    console.error('Error subiendo archivos:', err);
+    res.status(500).json({ ok: false, error: err.message || 'Error al subir archivos' });
+  }
+});
 
 // ERROR HANDLER
 app.use((err, req, res, next) => {
