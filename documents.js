@@ -119,6 +119,98 @@ function normalizeFileEntry(entry) {
 	return { name: name || '', mime: mime || '', url: url || '', path: f.path || '' };
 }
 
+// Mover displayDocuments fuera y hacerla global desde el inicio
+async function displayDocuments(q = '') {
+  const postsList = document.getElementById('postsList');
+  const { documents } = await loadDocuments(q);
+  const currentUser = await getCurrentUser();
+  
+  if (!postsList) return;
+  if (!documents || documents.length === 0) {
+    postsList.innerHTML = '<p>No hay publicaciones aún</p>';
+    return;
+  }
+
+  postsList.innerHTML = documents.map(doc => {
+    // Verificar si el usuario actual es el autor del documento
+    const isAuthor = currentUser && currentUser.email === doc.authorEmail;
+    
+    // Agregar botones de editar/borrar solo si es el autor
+    const actionButtons = isAuthor ? `
+      <div class="post-actions">
+        <button class="btn-edit" onclick="editDocument('${doc._id}')">✏️ Editar</button>
+        <button class="btn-delete" onclick="deleteDocument('${doc._id}')">🗑️ Borrar</button>
+      </div>
+    ` : '';
+
+    // Construir HTML para attachments
+    const attachmentsHtml = doc.files?.length ? `
+      <div class="post-attachments">
+        ${doc.files.map(file => {
+          const mime = file.mime || file.type || '';
+          const url = file.url || '';
+          // imagen -> miniatura que abre en nueva pestaña
+          if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.url)) {
+            return `
+                <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link attachment-image">
+                    <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" 
+                         class="attachment-thumb" onerror="this.src='placeholder.png'">
+                    <span class="attachment-name">${escapeHtml(file.name)}</span>
+                </a>
+            `;
+          }
+          // video -> elemento video reproducible inline
+          if (mime.startsWith('video/') || /\.(mp4|webm|ogg)$/i.test(file.url)) {
+            return `
+                <div class="attachment-video">
+                    <video src="${escapeHtml(file.url)}" controls class="attachment-video-elem"></video>
+                    <div class="attachment-name">${escapeHtml(file.name)}</div>
+                </div>
+            `;
+          }
+          // audio -> control inline
+          if (mime.startsWith('audio/') || /\.(mp3|wav|ogg)$/i.test(file.url)) {
+            return `
+                <div class="attachment-audio">
+                    <audio src="${escapeHtml(file.url)}" controls></audio>
+                    <div class="attachment-name">${escapeHtml(file.name)}</div>
+                </div>
+            `;
+          }
+          // default -> link de descarga con icono
+          return `
+              <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link" rel="noopener noreferrer" download>
+                  ${getFileIcon(mime)} ${escapeHtml(file.name)}
+              </a>
+          `;
+        }).join('')}
+      </div>
+    ` : '';
+
+    return `
+      <div class="post" data-id="${doc._id}">
+        <div class="post-header">
+          <img src="${escapeHtml(doc.authorPic || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.author||'U')}`)}" 
+               class="post-author-pic" alt="">
+          <div class="post-info">
+            <div class="post-author">${escapeHtml(doc.author)}</div>
+            <div class="post-date">${new Date(doc.date).toLocaleString()}</div>
+          </div>
+          ${actionButtons}
+        </div>
+        <div class="post-content">${escapeHtml(doc.content)}</div>
+        ${attachmentsHtml}
+      </div>
+    `;
+  }).join('');
+
+  // Agregar handlers de error a todos los medios cargados
+  postsList.querySelectorAll('img, video').forEach(handleFileError);
+}
+
+// Exponer displayDocuments globalmente de inmediato
+window.displayDocuments = displayDocuments;
+
 document.addEventListener('DOMContentLoaded', () => {
   let currentPage = 1;
   const postsPerPage = 10;
@@ -129,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('fileInput');
   const previewContainer = document.getElementById('filePreviewContainer');
 
-  // Cargar posts
+  // Mover loadDocuments y handleFileError fuera también ya que displayDocuments los usa
   async function loadDocuments(q = '') {
     try {
       const url = q
@@ -159,94 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         element.insertAdjacentHTML('afterend', '<div class="error-message">Video no disponible</div>');
       }
     };
-  }
-
-  // Render posts
-  async function displayDocuments(q = '') {
-    const { documents } = await loadDocuments(q);
-    const currentUser = await getCurrentUser();
-    
-    if (!postsList) return;
-    if (!documents || documents.length === 0) {
-      postsList.innerHTML = '<p>No hay publicaciones aún</p>';
-      return;
-    }
-
-    postsList.innerHTML = documents.map(doc => {
-      // Verificar si el usuario actual es el autor del documento
-      const isAuthor = currentUser && currentUser.email === doc.authorEmail;
-      
-      // Agregar botones de editar/borrar solo si es el autor
-      const actionButtons = isAuthor ? `
-        <div class="post-actions">
-          <button class="btn-edit" onclick="editDocument('${doc._id}')">✏️ Editar</button>
-          <button class="btn-delete" onclick="deleteDocument('${doc._id}')">🗑️ Borrar</button>
-        </div>
-      ` : '';
-
-      // Construir HTML para attachments
-      const attachmentsHtml = doc.files?.length ? `
-        <div class="post-attachments">
-          ${doc.files.map(file => {
-            const mime = file.mime || file.type || '';
-            const url = file.url || '';
-            // imagen -> miniatura que abre en nueva pestaña
-            if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.url)) {
-              return `
-                  <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link attachment-image">
-                      <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" 
-                           class="attachment-thumb" onerror="this.src='placeholder.png'">
-                      <span class="attachment-name">${escapeHtml(file.name)}</span>
-                  </a>
-              `;
-            }
-            // video -> elemento video reproducible inline
-            if (mime.startsWith('video/') || /\.(mp4|webm|ogg)$/i.test(file.url)) {
-              return `
-                  <div class="attachment-video">
-                      <video src="${escapeHtml(file.url)}" controls class="attachment-video-elem"></video>
-                      <div class="attachment-name">${escapeHtml(file.name)}</div>
-                  </div>
-              `;
-            }
-            // audio -> control inline
-            if (mime.startsWith('audio/') || /\.(mp3|wav|ogg)$/i.test(file.url)) {
-              return `
-                  <div class="attachment-audio">
-                      <audio src="${escapeHtml(file.url)}" controls></audio>
-                      <div class="attachment-name">${escapeHtml(file.name)}</div>
-                  </div>
-              `;
-            }
-            // default -> link de descarga con icono
-            return `
-                <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link" rel="noopener noreferrer" download>
-                    ${getFileIcon(mime)} ${escapeHtml(file.name)}
-                </a>
-            `;
-          }).join('')}
-        </div>
-      ` : '';
-
-      return `
-        <div class="post" data-id="${doc._id}">
-          <div class="post-header">
-            <img src="${escapeHtml(doc.authorPic || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.author||'U')}`)}" 
-                 class="post-author-pic" alt="">
-            <div class="post-info">
-              <div class="post-author">${escapeHtml(doc.author)}</div>
-              <div class="post-date">${new Date(doc.date).toLocaleString()}</div>
-            </div>
-            ${actionButtons}
-          </div>
-          <div class="post-content">${escapeHtml(doc.content)}</div>
-          ${attachmentsHtml}
-        </div>
-      `;
-    }).join('');
-
-    // Agregar handlers de error a todos los medios cargados
-    postsList.querySelectorAll('img, video').forEach(handleFileError);
   }
 
   // REEMPLAZAR createDocument para usar getCurrentUser()
@@ -468,4 +472,3 @@ async function editDocument(id) {
 // Exponer funciones globalmente
 window.deleteDocument = deleteDocument;
 window.editDocument = editDocument;
-window.displayDocuments = displayDocuments;
