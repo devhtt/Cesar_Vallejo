@@ -468,3 +468,4 @@ async function editDocument(id) {
 // Exponer funciones globalmente
 window.deleteDocument = deleteDocument;
 window.editDocument = editDocument;
+window.displayDocuments = displayDocuments;
