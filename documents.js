@@ -164,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render posts
   async function displayDocuments(q = '') {
     const { documents } = await loadDocuments(q);
-    // Obtener usuario actual antes de renderizar
     const currentUser = await getCurrentUser();
     
     if (!postsList) return;
@@ -424,7 +423,7 @@ async function deleteDocument(id) {
     
     if (!res.ok) throw new Error('No autorizado');
     
-    await displayDocuments(); // recargar lista
+    await window.displayDocuments(); // usar window.displayDocuments
     alert('Publicación borrada');
   } catch (err) {
     alert('Error al borrar: ' + err.message);
@@ -459,7 +458,7 @@ async function editDocument(id) {
     
     if (!res.ok) throw new Error('No autorizado');
     
-    await displayDocuments(); // recargar lista
+    await window.displayDocuments(); // usar window.displayDocuments
     alert('Publicación actualizada');
   } catch (err) {
     alert('Error al actualizar: ' + err.message);
