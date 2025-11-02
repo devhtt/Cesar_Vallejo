@@ -148,12 +148,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Función helper para manejar errores de carga de imágenes/archivos
+  function handleFileError(element) {
+    element.onerror = () => {
+      // Reemplazar con placeholder si falla la carga
+      if (element.tagName === 'IMG') {
+        element.src = 'placeholder.png';
+      } else if (element.tagName === 'VIDEO') {
+        element.style.display = 'none';
+        element.insertAdjacentHTML('afterend', '<div class="error-message">Video no disponible</div>');
+      }
+    };
+  }
+
   // Render posts
   async function displayDocuments(q = '') {
     const { documents } = await loadDocuments(q);
-    const currentUser = await getCurrentUser();
-    
     if (!postsList) return;
+    
     if (!documents || documents.length === 0) {
       postsList.innerHTML = '<p>No hay publicaciones aún</p>';
       return;
@@ -178,11 +190,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="post-attachments">
               ${filesArr.map(file => {
                   const mime = file.mime || file.type || '';
+                  const url = file.url || '';
                   // imagen -> miniatura que abre en nueva pestaña
                   if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.url)) {
                     return `
-                        <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link attachment-image" rel="noopener noreferrer">
-                            <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" class="attachment-thumb">
+                        <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link attachment-image">
+                            <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" 
+                                 class="attachment-thumb" onerror="this.src='placeholder.png'">
                             <span class="attachment-name">${escapeHtml(file.name)}</span>
                         </a>
                     `;
@@ -231,6 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     }).join('');
+
+    // Agregar handlers de error a todos los medios cargados
+    postsList.querySelectorAll('img, video').forEach(handleFileError);
   }
 
   // REEMPLAZAR createDocument para usar getCurrentUser()
