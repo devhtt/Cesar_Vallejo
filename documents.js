@@ -103,11 +103,13 @@ function normalizeFileEntry(entry) {
 	let url = f.url || '';
 
 	// si tenemos path pero no url, construir url desde BASE_URL
-	if (!url && f.path) {
-		const p = String(f.path).replace(/^\/+/, '');
-		const base = (BASE_URL && BASE_URL.startsWith('http')) ? BASE_URL.replace(/\/$/, '') : window.location.origin;
-		url = base + '/' + p;
-	}
+    if (!url && f.path) {
+       const p = String(f.path).replace(/^\/+/, '');
+       let base = (BASE_URL && BASE_URL.startsWith('http')) ? BASE_URL.replace(/\/$/, '') : window.location.origin;
+       base = base.replace(/^http:\/\//, 'https://'); // evita Mixed Content
+       url = base + '/' + p;
+    }
+
 
 	// si url es relativo (no comienza con http) lo convertimos a absoluto
 	if (url && !/^https?:\/\//i.test(url)) {
@@ -472,3 +474,4 @@ async function editDocument(id) {
 // Exponer funciones globalmente
 window.deleteDocument = deleteDocument;
 window.editDocument = editDocument;
+
