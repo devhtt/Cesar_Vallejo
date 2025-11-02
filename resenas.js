@@ -1,7 +1,5 @@
-// Verificar BASE_URL al inicio
-if (typeof BASE_URL === 'undefined') {
-    const BASE_URL = 'https://ucv-backend-2ohp.onrender.com';
-}
+// Reemplazar la detección incorrecta de BASE_URL por API_BASE
+const API_BASE = (typeof BASE_URL !== 'undefined') ? BASE_URL : 'https://ucv-backend-2ohp.onrender.com';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Estado inicial
@@ -50,11 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Función mejorada para cargar reseñas
+    // Función mejorada para cargar reseñas (usa API_BASE)
     async function loadReviews() {
         try {
-            console.log('Fetching from:', `${BASE_URL}/api/reviews`); // Debug
-            const response = await fetch(`${BASE_URL}/api/reviews?page=${currentPage}&limit=${reviewsPerPage}`, {
+            console.log('Fetching from:', `${API_BASE}/api/reviews?page=${currentPage}&limit=${reviewsPerPage}`); // Debug
+            const response = await fetch(`${API_BASE}/api/reviews?page=${currentPage}&limit=${reviewsPerPage}`, {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
@@ -76,25 +74,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Manejar estrellas de calificación
+    // Manejar estrellas de calificación (guardando null-safety)
     const starContainer = document.querySelector('.star-rating');
-    const stars = starContainer.querySelectorAll('i');
-    
-    stars.forEach(star => {
-        star.addEventListener('mouseover', function() {
-            const rating = this.dataset.rating;
-            updateStars(rating);
+    let stars = [];
+    if (starContainer) {
+        stars = Array.from(starContainer.querySelectorAll('i'));
+        stars.forEach(star => {
+            star.addEventListener('mouseover', function() {
+                const rating = this.dataset.rating;
+                updateStars(rating);
+            });
+            
+            star.addEventListener('mouseout', function() {
+                updateStars(currentRating);
+            });
+            
+            star.addEventListener('click', function() {
+                currentRating = this.dataset.rating;
+                updateStars(currentRating);
+            });
         });
-        
-        star.addEventListener('mouseout', function() {
-            updateStars(currentRating);
-        });
-        
-        star.addEventListener('click', function() {
-            currentRating = this.dataset.rating;
-            updateStars(currentRating);
-        });
-    });
+    }
 
     function updateStars(rating) {
         stars.forEach(star => {
@@ -154,15 +154,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Función para mostrar reseñas
+    // Función para mostrar reseñas (actualizada paginación usando total)
     async function displayReviews() {
         const container = document.querySelector('.reviews-list');
+        if (!container) return;
+
         const { reviews, total } = await loadReviews();
 
-        container.innerHTML = reviews.map(review => `
+        container.innerHTML = (reviews || []).map(review => `
             <div class="review-card">
                 <div class="review-header">
-                    <img src="${review.user.picture}" alt="Avatar" class="reviewer-avatar">
+                    <img src="${escapeHtml(review.user.picture)}" alt="Avatar" class="reviewer-avatar">
                     <div class="reviewer-info">
                         <div class="reviewer-name">${escapeHtml(review.user.name)}</div>
                         <div class="review-date">${new Date(review.date).toLocaleDateString()}</div>
@@ -175,11 +177,15 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `).join('');
 
-        // Actualizar paginación
-        const totalPages = Math.ceil(total / reviewsPerPage);
-        document.getElementById('currentPage').textContent = currentPage;
-        document.getElementById('prevPage').disabled = currentPage === 1;
-        document.getElementById('nextPage').disabled = currentPage === totalPages;
+        // Actualizar paginación a partir del total devuelto por el servidor
+        const totalPages = Math.max(1, Math.ceil((total || 0) / reviewsPerPage));
+        const currentPageEl = document.getElementById('currentPage');
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+
+        if (currentPageEl) currentPageEl.textContent = currentPage;
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
     }
 
     // Generar HTML de estrellas (soporta medias para promedios)
@@ -198,49 +204,62 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Actualizar función para rating general
+    // Actualizar función para rating general => solicitar muchas reseñas para calcular promedio real
     async function updateOverallRating() {
-        const { reviews, total } = await loadReviews();
-        
-        if (total === 0) {
-            document.querySelector('.big-rating').textContent = '0.0';
-            document.querySelector('.total-reviews').textContent = 'No hay reseñas aún';
-            document.querySelector('.rating-stars').innerHTML = getStarHTML(0);
-            return;
+        try {
+            // pedir muchas reseñas para calcular el promedio global (si la API permite)
+            const limitForAll = 10000;
+            const res = await fetch(`${API_BASE}/api/reviews?page=1&limit=${limitForAll}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('server_error');
+            const data = await res.json();
+            const all = data && data.reviews ? data.reviews : [];
+            const total = data && data.total ? data.total : (all.length || 0);
+
+            if (total === 0) {
+                const br = document.querySelector('.big-rating');
+                const tr = document.querySelector('.total-reviews');
+                const rs = document.querySelector('.rating-stars');
+                if (br) br.textContent = '0.0';
+                if (tr) tr.textContent = 'No hay reseñas aún';
+                if (rs) rs.innerHTML = getStarHTML(0);
+                return;
+            }
+
+            const totalStars = all.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+            const average = totalStars / (all.length || total);
+            const roundedAverage = Math.round(average * 10) / 10;
+
+            const big = document.querySelector('.big-rating');
+            const totalEl = document.querySelector('.total-reviews');
+            const starsEl = document.querySelector('.rating-stars');
+
+            if (big) big.textContent = roundedAverage.toFixed(1);
+            if (totalEl) totalEl.textContent = `Basado en ${total} reseña${total !== 1 ? 's' : ''}`;
+            if (starsEl) starsEl.innerHTML = getStarHTML(roundedAverage);
+        } catch (err) {
+            console.error('Error calculando rating global:', err);
         }
-
-        const totalStars = reviews.reduce((sum, review) => sum + Number(review.rating), 0);
-        const average = totalStars / reviews.length;
-        const roundedAverage = Math.round(average * 10) / 10;
-
-        document.querySelector('.big-rating').textContent = roundedAverage.toFixed(1);
-        document.querySelector('.total-reviews').textContent = 
-            `Basado en ${total} reseña${total !== 1 ? 's' : ''}`;
-        document.querySelector('.rating-stars').innerHTML = getStarHTML(roundedAverage);
     }
 
-    function updatePagination() {
-        const totalPages = Math.max(1, Math.ceil(reviews.length / reviewsPerPage));
-        document.getElementById('currentPage').textContent = currentPage;
-        document.getElementById('prevPage').disabled = currentPage === 1;
-        document.getElementById('nextPage').disabled = currentPage === totalPages;
+    // Eventos de paginación (usar currentPage y displayReviews)
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayReviews();
+            }
+        });
     }
 
-    // Eventos de paginación
-    document.getElementById('prevPage').addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            displayReviews();
-        }
-    });
-
-    document.getElementById('nextPage').addEventListener('click', () => {
-        const totalPages = Math.max(1, Math.ceil(reviews.length / reviewsPerPage));
-        if (currentPage < totalPages) {
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => {
             currentPage++;
             displayReviews();
-        }
-    });
+        });
+    }
 
     // util: escapar HTML simple
     function escapeHtml(str) {
