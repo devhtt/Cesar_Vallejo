@@ -119,7 +119,41 @@ function normalizeFileEntry(entry) {
 	return { name: name || '', mime: mime || '', url: url || '', path: f.path || '' };
 }
 
-// Mover displayDocuments fuera y hacerla global desde el inicio
+// Variables globales
+let currentPage = 1;
+const postsPerPage = 10;
+
+// Funciones auxiliares globales
+async function loadDocuments(q = '') {
+  try {
+    const url = q
+      ? `${BASE_URL}/api/documents/search?q=${encodeURIComponent(q)}&page=${currentPage}&limit=${postsPerPage}`
+      : `${BASE_URL}/api/documents?page=${currentPage}&limit=${postsPerPage}`;
+    const res = await fetch(url, { credentials: 'include' });
+    const parsed = await parseResponse(res);
+    if (!res.ok) {
+      const err = parsed && parsed.error ? parsed.error : parsed._rawText || 'Error cargando documentos';
+      throw new Error(err);
+    }
+    return parsed.ok ? { documents: parsed.documents, total: parsed.total } : { documents: parsed.documents || [], total: parsed.total || 0 };
+  } catch (err) {
+    console.error('loadDocuments error:', err);
+    return { documents: [], total: 0 };
+  }
+}
+
+function handleFileError(element) {
+  element.onerror = () => {
+    if (element.tagName === 'IMG') {
+      element.src = 'placeholder.png';
+    } else if (element.tagName === 'VIDEO') {
+      element.style.display = 'none';
+      element.insertAdjacentHTML('afterend', '<div class="error-message">Video no disponible</div>');
+    }
+  };
+}
+
+// Función principal de renderizado (global)
 async function displayDocuments(q = '') {
   const postsList = document.getElementById('postsList');
   const { documents } = await loadDocuments(q);
@@ -208,50 +242,16 @@ async function displayDocuments(q = '') {
   postsList.querySelectorAll('img, video').forEach(handleFileError);
 }
 
-// Exponer displayDocuments globalmente de inmediato
+// Exponer funciones globalmente de inmediato
 window.displayDocuments = displayDocuments;
+window.loadDocuments = loadDocuments;
 
 document.addEventListener('DOMContentLoaded', () => {
-  let currentPage = 1;
-  const postsPerPage = 10;
-
   const postsList = document.getElementById('postsList');
   const searchInput = document.getElementById('searchInput');
   const form = document.getElementById('postForm');
   const fileInput = document.getElementById('fileInput');
   const previewContainer = document.getElementById('filePreviewContainer');
-
-  // Mover loadDocuments y handleFileError fuera también ya que displayDocuments los usa
-  async function loadDocuments(q = '') {
-    try {
-      const url = q
-        ? `${BASE_URL}/api/documents/search?q=${encodeURIComponent(q)}&page=${currentPage}&limit=${postsPerPage}`
-        : `${BASE_URL}/api/documents?page=${currentPage}&limit=${postsPerPage}`;
-      const res = await fetch(url, { credentials: 'include' });
-      const parsed = await parseResponse(res);
-      if (!res.ok) {
-        const err = parsed && parsed.error ? parsed.error : parsed._rawText || 'Error cargando documentos';
-        throw new Error(err);
-      }
-      return parsed.ok ? { documents: parsed.documents, total: parsed.total } : { documents: parsed.documents || [], total: parsed.total || 0 };
-    } catch (err) {
-      console.error('loadDocuments error:', err);
-      return { documents: [], total: 0 };
-    }
-  }
-
-  // Función helper para manejar errores de carga de imágenes/archivos
-  function handleFileError(element) {
-    element.onerror = () => {
-      // Reemplazar con placeholder si falla la carga
-      if (element.tagName === 'IMG') {
-        element.src = 'placeholder.png';
-      } else if (element.tagName === 'VIDEO') {
-        element.style.display = 'none';
-        element.insertAdjacentHTML('afterend', '<div class="error-message">Video no disponible</div>');
-      }
-    };
-  }
 
   // REEMPLAZAR createDocument para usar getCurrentUser()
   async function createDocument(content) {
