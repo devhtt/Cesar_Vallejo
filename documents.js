@@ -177,43 +177,43 @@ async function displayDocuments(q = '') {
       </div>
     ` : '';
 
-    // Construir HTML para attachments
-    const attachmentsHtml = doc.files?.length ? `
+    // Normalizar archivos (soporta objetos, cadenas JSON y paths relativos)
+    const rawFiles = Array.isArray(doc.files) ? doc.files : (doc.files ? [doc.files] : []);
+    const filesArr = rawFiles.map(normalizeFileEntry).filter(f => f && f.url);
+
+    // Construir HTML para attachments (usar filesArr)
+    const attachmentsHtml = (filesArr && filesArr.length) ? `
       <div class="post-attachments">
-        ${doc.files.map(file => {
+        ${filesArr.map(file => {
           const mime = file.mime || file.type || '';
           const url = file.url || '';
-          // imagen -> miniatura que abre en nueva pestaña
-          if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.url)) {
+          if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(url)) {
             return `
-                <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link attachment-image">
-                    <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" 
+                <a href="${escapeHtml(url)}" target="_blank" class="attachment-link attachment-image">
+                    <img src="${escapeHtml(url)}" alt="${escapeHtml(file.name)}" 
                          class="attachment-thumb" onerror="this.src='placeholder.png'">
                     <span class="attachment-name">${escapeHtml(file.name)}</span>
                 </a>
             `;
           }
-          // video -> elemento video reproducible inline
-          if (mime.startsWith('video/') || /\.(mp4|webm|ogg)$/i.test(file.url)) {
+          if (mime.startsWith('video/') || /\.(mp4|webm|ogg)$/i.test(url)) {
             return `
                 <div class="attachment-video">
-                    <video src="${escapeHtml(file.url)}" controls class="attachment-video-elem"></video>
+                    <video src="${escapeHtml(url)}" controls class="attachment-video-elem"></video>
                     <div class="attachment-name">${escapeHtml(file.name)}</div>
                 </div>
             `;
           }
-          // audio -> control inline
-          if (mime.startsWith('audio/') || /\.(mp3|wav|ogg)$/i.test(file.url)) {
+          if (mime.startsWith('audio/') || /\.(mp3|wav|ogg)$/i.test(url)) {
             return `
                 <div class="attachment-audio">
-                    <audio src="${escapeHtml(file.url)}" controls></audio>
+                    <audio src="${escapeHtml(url)}" controls></audio>
                     <div class="attachment-name">${escapeHtml(file.name)}</div>
                 </div>
             `;
           }
-          // default -> link de descarga con icono
           return `
-              <a href="${escapeHtml(file.url)}" target="_blank" class="attachment-link" rel="noopener noreferrer" download>
+              <a href="${escapeHtml(url)}" target="_blank" class="attachment-link" rel="noopener noreferrer" download>
                   ${getFileIcon(mime)} ${escapeHtml(file.name)}
               </a>
           `;
