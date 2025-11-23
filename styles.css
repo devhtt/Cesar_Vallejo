@@ -1,0 +1,511 @@
+:root {
+    --red: #FF0000;
+    --blue: #4285F4;
+    --yellow: #FBBC05;
+    --green: #34A853;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding:  20px;
+}
+
+/* Top Navigation */
+.top-nav {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo {
+    height: 50px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.btn-postula {
+    background: var(--red);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+/* Hero Section */
+.hero {
+    background: #f8f9fa;
+    padding: 1.5rem 0; /* reducido de 4rem a 1.5rem */
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin: 2rem 0;
+}
+
+.blue { color: var(--blue); }
+.red { color: var(--red); }
+.yellow { color: var(--yellow); }
+.green { color: var(--green); }
+
+.signature {
+    font-style: italic;
+    color: #666;
+}
+
+.btn-conocer {
+    display: inline-block;
+    background: var(--red);
+    color: white;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    border-radius: 25px;
+    margin-top: 2rem;
+    font-weight: bold;
+}
+
+/* Bottom Navigation */
+.textonoma {
+    background: #11016d;
+    padding: 1rem 0;
+    color: white;
+}
+
+.bottom-nav .container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bottom-nav a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.textope {
+ padding: 15px;
+}
+
+.nameuniversity {
+    font-weight: bold;
+    font-size: 1.2 rem;
+    color: #1a237e;
+    padding-left: 50px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.university-name {
+    font-weight: bold;
+    color: #100450;
+}
+/*aqui puro imagenes la csm*/
+.gallery { padding: 24px 0 80px; }
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr); /* 6 imágenes por fila */
+  gap: 16px;
+  align-items: start;
+}
+
+/* Tarjeta con flip 3D */
+.card { perspective: 1000px; }
+.card-inner {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* mantiene cuadrado */
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+.card.is-flipped .card-inner { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+  position: absolute;
+  top:0; left:0; right:0; bottom:0;
+  backface-visibility: hidden;
+  border-radius: 8px;
+  overflow: hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  box-shadow: 0 6px 18px rgba(12,20,40,0.06);
+}
+
+/* Imagen frontal */
+.card-front img { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Reverso con texto editable */
+.card-back {
+  transform: rotateY(180deg);
+  padding: 10px;
+  text-align: center;
+  font-weight: 600;
+  color: #222;
+  cursor: pointer; /* pointer en vez de cursor de texto */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; /* evitar selección que parece edición */
+}
+
+/* Pie/leyenda editable debajo de cada tarjeta */
+.caption {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #444;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Responsive: menos columnas en pantallas pequeñas */
+@media (max-width:1200px) {
+  .gallery-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width:800px) {
+  .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width:480px) {
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Estilos para la página de selección */
+.selection {
+  padding: 48px 0;
+}
+
+.subtitle {
+  color: #555;
+  margin-top: 6px;
+}
+
+.content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 80px;
+  margin: 20px auto;
+  min-height: 250px;
+  position: relative;
+}
+
+.selection-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.sel-btn {
+  min-width: 200px;
+  padding: 15px 20px;
+  border-radius: 28px;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(12,20,40,0.08);
+  border: 2px solid rgba(0,0,0,0.06);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.sel-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(12,20,40,0.12);
+}
+
+.sel-galeria { background: #e62121; }
+.sel-practica { background: #1bb343; }
+.sel-comunicacion { background: #216eeb; }
+
+.image-container {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.image-container img {
+  max-width: 400px;
+  height: 250px;
+  object-fit: contain;
+}
+
+.help-text {
+  text-align: center;
+  color: #555;
+  margin-bottom: 30px;
+  font-size: 1.2em;
+  font-style: italic;
+}
+
+.btn-conocer {
+  text-decoration: none;
+  margin-top: 15px;
+}
+
+/* Estilos añadidos desde practica.html */
+body{font-family:system-ui,Segoe UI,Arial;margin:0;padding:0;background:#f7f7f7;color:#222}
+.container{max-width:900px;margin:30px auto;padding:18px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.header{display:flex;align-items:center;gap:12px}
+.logo{width:56px;height:56px;object-fit:contain}
+h1{margin:.25rem 0 1rem}
+.center{text-align:center}
+.start-row{display:flex;justify-content:center;margin:18px 0}
+.btn{background:#0b66ff;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.timer-wrap{height:18px;background:#e6e6e6;border-radius:10px;overflow:hidden;margin:14px 0}
+.timer-bar{height:100%;width:0;background:#2dc26b;transition:width .3s}
+.time-text{font-weight:600;margin-left:8px}
+.game-area{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px}
+.question-img{width:240px;height:180px;object-fit:contain;border:3px solid #ddd;border-radius:8px;background:#fff}
+.options{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.opt{width:170px;height:120px;object-fit:contain;border:3px solid transparent;border-radius:8px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+.opt:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.feedback{margin-top:8px;font-weight:700}
+.meta{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.hidden{display:none}
+.result{padding:16px;border-radius:8px;background:#fff;margin-top:10px;text-align:center}
+
+/* Nuevo: estilos para panel de inicio de sesión */
+.hero-login {
+  padding: 45px;
+}
+.login-panel {
+  display:flex;
+  justify-content:center;
+  margin-top: 1.5rem;
+}
+.login-card {
+  width: 340px;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,20,60,0.08);
+  text-align: center;
+}
+.login-card h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  color: #111;
+}
+.login-card input[type="email"],
+.login-card input[type="password"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+}
+.login-card .or {
+  margin: 10px 0;
+  color: #666;
+  font-weight: 600;
+}
+.login-card .login-help { margin-top:8px; }
+.login-card .login-help a { color:#0b66ff; text-decoration:none; font-size:0.9rem; }
+
+.welcome-msg {
+    color: #444;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+/* Ajustes visuales para el botón de Google y logout */
+.g_id_signin { margin: 6px 0; }
+.btn-logout { background:#888; }
+
+/* Nuevos estilos para la sección Hero */
+.hero-content {
+  /* mantenemos espacio vertical */
+  padding: 8px 0; /* reducido de 20px a 8px */
+}
+
+/* grid/flex para dividir el hero en dos columnas */
+.hero-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px; /* reducido de 40px a 16px */
+  flex-wrap: nowrap;
+}
+
+/* columna del texto (izquierda) */
+.hero-text {
+  flex: 1 1 60%;
+  text-align: left;
+}
+
+/* ajustar tamaño y peso del h1 dentro de hero-text */
+.hero-text h1 {
+  font-size: 2.6rem;
+  line-height: 1.05;
+  margin: 0;
+}
+
+/* columna del login (derecha) */
+.hero-login {
+  flex: 0 0 360px; /* ancho fijo recomendado para el panel */
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* asegurar que el panel ocupe su ancho y esté centrado verticalmente */
+.login-panel {
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+}
+
+/* Responsivo: en pantallas pequeñas apilar verticalmente */
+@media (max-width: 900px) {
+  .hero-grid {
+    flex-direction: column;
+    gap: 10px; /* menor gap en móvil */
+  }
+  .hero-login {
+    flex: 1 1 auto;
+    justify-content: center;
+    width: 100%;
+  }
+  .hero-text h1 { font-size: 2rem; }
+}
+
+/* Layout de selección */
+.selection-layout {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.profile-panel {
+  flex: 0 0 300px;
+  margin-right: 2rem;
+}
+
+.options-panel {
+  flex: 1;
+}
+
+.profile-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-avatar {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.profile-avatar img {
+  width: 120px;
+  height: 120px;
+  border-radius: 60px;
+  border: 3px solid #4285F4;
+}
+
+.profile-info {
+  margin: 1.5rem 0;
+}
+
+.profile-field {
+  margin: 0.75rem 0;
+}
+
+.profile-field label {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.stat-card {
+  background: #f5f5f5;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card h3 {
+  font-size: 0.9em;
+  color: #666;
+  margin: 0 0 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+}
+
+.profile-actions {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+/* Mejoras botones selección */
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.sel-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sel-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.sel-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.sel-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+}

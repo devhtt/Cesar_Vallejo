@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Panel Principal - UCV</title>
+    <link rel="icon" type="image/png" href="ucv.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(46, 125, 50, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+            transition: opacity 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+    </style>
+</head>
+<body>
+    <header class="top-nav">
+        <div class="container">
+            <div class="logo-container">
+                <img src="ucv.png" alt="Logo UCV" class="logo">
+                <span class="university-name">Universidad César Vallejo</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Sección de perfil -->
+        <aside class="dashboard-sidebar">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <img id="userProfilePic" src="https://ui-avatars.com/api/?name=U&background=4285F4&color=fff" alt="Foto de perfil">
+                    <h2 id="userName">Cargando...</h2>
+                    <p id="userEmail" class="user-email">Cargando...</p>
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="stat-box">
+                        <span class="stat-label">Record</span>
+                        <span class="stat-value">--</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Logros</span>
+                        <span class="stat-value">--</span>
+                    </div>
+                </div>
+
+                <div class="profile-info">
+                    <div class="info-item">
+                        <span class="info-label">Último acceso:</span>
+                        <span id="loginTime" class="info-value">Cargando...</span>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-logout btn-save" id="btnSaveSession">Guardar sesión</button>
+                    <button class="btn-logout" id="btnLogout">Cerrar sesión</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Sección de cursos -->
+        <section class="dashboard-main">
+            <div class="section-header">
+                <h1>Mis Cursos</h1>
+                <p class="subtitle">Elige una sección para continuar aprendiendo</p>
+            </div>
+
+            <div class="courses-grid">
+                <a href="images.html" class="course-card gallery">
+                    <div class="course-icon">🖼️</div>
+                    <h3>Galería</h3>
+                    <p>Explora el vocabulario de señas</p>
+                </a>
+
+                <a href="practica.html" class="course-card practice">
+                    <div class="course-icon">✏️</div>
+                    <h3>Práctica</h3>
+                    <p>Pon a prueba tus conocimientos</p>
+                </a>
+
+                <a href="documents.html" class="course-card communication">
+                    <div class="course-icon">💬</div>
+                    <h3>Comunicación</h3>
+                    <p>Interactúa y aprende en tiempo real</p>
+                </a>
+
+                <a href="resenas.html" class="course-card reviews">
+                    <div class="course-icon">⭐</div>
+                    <h3>Reseñas</h3>
+                    <p>Comparte tu experiencia</p>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script src="main.js"></script>
+    <script src="seleccion.js"></script>
+</body>
+
+</html>

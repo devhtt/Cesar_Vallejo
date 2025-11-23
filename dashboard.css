@@ -1,0 +1,203 @@
+/* Layout principal */
+.dashboard {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Sidebar con perfil */
+.dashboard-sidebar {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+.profile-container {
+    padding: 1.5rem;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.profile-header img {
+    width: 120px;
+    height: 120px;
+    border-radius: 60px;
+    border: 3px solid #4285F4;
+    margin-bottom: 1rem;
+}
+
+.profile-header h2 {
+    margin: 0;
+    color: #333;
+}
+
+.user-email {
+    color: #666;
+    font-size: 0.9em;
+    margin: 0.5rem 0;
+}
+
+/* Stats boxes */
+.profile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.stat-box {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Información adicional */
+.profile-info {
+    margin: 1.5rem 0;
+}
+
+.info-item {
+    margin: 0.5rem 0;
+    font-size: 0.9em;
+}
+
+.info-label {
+    color: #666;
+}
+
+.info-value {
+    color: #333;
+    margin-left: 0.5rem;
+}
+
+/* Botones y acciones */
+.profile-actions {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.btn-logout {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #f44336;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.btn-logout:hover {
+    background: #d32f2f;
+}
+
+.btn-save {
+    background: #2e7d32 !important;
+    margin-bottom: 8px;
+}
+
+.btn-save:hover {
+    background: #1b5e20 !important;
+}
+
+/* Sección principal de cursos */
+.dashboard-main {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    margin-bottom: 1.2rem;
+}
+
+.section-header h1 {
+    margin: 0 0 8px 0;
+    color: #222;
+    font-size: 1.8rem;
+}
+
+.section-header .subtitle {
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+/* Grid de cursos */
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+    align-items: stretch;
+}
+
+.course-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.6rem;
+    text-decoration: none;
+    color: #111;
+    transition: transform 0.18s, box-shadow 0.18s;
+    border: 1px solid #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: 120px;
+}
+
+.course-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(16,24,40,0.06);
+}
+
+.course-icon {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    display: inline-block;
+}
+
+.course-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.05rem;
+}
+
+.course-card p {
+    margin: 0;
+    color: #666;
+    font-size: 0.92rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-sidebar {
+        position: relative;
+        width: 100%;
+    }
+
+    .courses-grid { gap: 12px; }
+}

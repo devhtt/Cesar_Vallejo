@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos - UCV</title>
+    <link rel="icon" type="image/png" href="ucv.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="documents.css">
+</head>
+<body>
+    <!-- Agregar cabecera con logo -->
+    <header class="top-nav">
+        <div class="container">
+            <div class="logo-container">
+                <img src="ucv.png" alt="Logo UCV" class="logo">
+                <span class="university-name">Universidad César Vallejo</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="documents-container">
+        <!-- Barra de búsqueda -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Buscar publicaciones...">
+        </div>
+
+        <!-- Lista de posts -->
+        <div id="postsList" class="posts-list">
+            <!-- Posts se cargan dinámicamente -->
+        </div>
+
+        <!-- Formulario de publicación (fijo abajo) -->
+        <form class="post-form" id="postForm">
+            <div class="post-form-inner">
+                <textarea 
+                    class="post-input" 
+                    id="postContent" 
+                    placeholder="Escribe algo para compartir..."></textarea>
+                <div class="post-actions">
+                    <input type="file" 
+                           id="fileInput" 
+                           multiple 
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.mp4,.jpg,.jpeg,.png"
+                           style="display:none">
+                    <button type="button" 
+                            class="btn-attach" 
+                            onclick="document.getElementById('fileInput').click()">
+                        📎
+                    </button>
+                    <button type="submit" class="btn-submit" id="submitPost">
+                        <span class="btn-text">Publicar</span>
+                        <span class="loading-spinner hidden"></span>
+                    </button>
+                    <a href="seleccion.html" class="btn-back">Volver</a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Contenedor para preview -->
+        <div id="filePreviewContainer" class="file-preview hidden"></div>
+    </div>
+
+    <script src="documents.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Señas - Galería 1-15</title>
+  <link rel="icon" type="image/png" href="ucv.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top-nav">
+    <div class="container">
+      <div class="logo-container">
+        <img src="ucv.png" alt="Logo UCV" class="logo">
+        <span class="university-name">Universidad César Vallejo</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="gallery container">
+    <div class="video-container" style="text-align: center; margin: 20px auto; max-width: 500px;">
+      <video width="100%" 
+             style="max-height: 300px; object-fit: contain;" 
+             controls 
+             preload="auto">
+        <source src="kat.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <h2 style="text-align:center; margin:18px 0;">Galería de señales 1 a 15</h2>
+
+    <div class="gallery-grid" id="gallery">
+      <div class="card" data-index="1">
+        <div class="card-inner">
+          <div class="card-front">
+            <img src="1.jpg" alt="1">
+          </div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">F</div>
+      </div>
+
+      <div class="card" data-index="2">
+        <div class="card-inner">
+          <div class="card-front">
+            <img src="2.jpg" alt="2">
+          </div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">D</div>
+      </div>
+
+      
+      <div class="card" data-index="3">
+        <div class="card-inner">
+          <div class="card-front"><img src="3.jpg" alt="3"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">C</div>
+      </div>
+
+      <div class="card" data-index="4">
+        <div class="card-inner">
+          <div class="card-front"><img src="4.jpg" alt="4"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">B</div>
+      </div>
+
+      <div class="card" data-index="5">
+        <div class="card-inner">
+          <div class="card-front"><img src="5.jpg" alt="5"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">E</div>
+      </div>
+
+      <div class="card" data-index="6">
+        <div class="card-inner">
+          <div class="card-front"><img src="6.jpg" alt="6"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">A</div>
+      </div>
+
+      <div class="card" data-index="7">
+        <div class="card-inner">
+          <div class="card-front"><img src="7.jpg" alt="7"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">G</div>
+      </div>
+
+      <div class="card" data-index="8">
+        <div class="card-inner">
+          <div class="card-front"><img src="8.jpg" alt="8"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">H</div>
+      </div>
+
+      <div class="card" data-index="9">
+        <div class="card-inner">
+          <div class="card-front"><img src="9.jpg" alt="9"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">I</div>
+      </div>
+
+      <div class="card" data-index="10">
+        <div class="card-inner">
+          <div class="card-front"><img src="10.jpg" alt="10"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">K</div>
+      </div>
+
+      <div class="card" data-index="11">
+        <div class="card-inner">
+          <div class="card-front"><img src="11.jpg" alt="11"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">L</div>
+      </div>
+
+      <div class="card" data-index="12">
+        <div class="card-inner">
+          <div class="card-front"><img src="12.jpg" alt="12"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">M</div>
+      </div>
+
+      <div class="card" data-index="13">
+        <div class="card-inner">
+          <div class="card-front"><img src="13.jpg" alt="13"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">N</div>
+      </div>
+
+      <div class="card" data-index="14">
+        <div class="card-inner">
+          <div class="card-front"><img src="14.jpg" alt="14"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">O</div>
+      </div>
+
+      <div class="card" data-index="15">
+        <div class="card-inner">
+          <div class="card-front"><img src="15.jpg" alt="15"></div>
+          <div class="card-back"></div>
+        </div>
+        <div class="caption">P</div>
+      </div>
+      
+    </div>
+
+    <div style="text-align:center; margin-top:18px;">
+      <a href="seleccion.html" class="btn-conocer">Volver</a>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      document.querySelectorAll('.card').forEach(function(card){
+        card.classList.remove('is-flipped');
+        const front = card.querySelector('.card-front');
+        const back = card.querySelector('.card-back');
+        if (front) front.style.pointerEvents = 'none';
+        if (back) back.style.pointerEvents = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
